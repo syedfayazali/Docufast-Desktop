@@ -1,0 +1,70 @@
+{
+  "name": "docufast-agent",
+  "version": "1.0.11",
+  "description": "DocuFast India \u2014 Print Agent Desktop App",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "electron-builder --win --x64",
+    "build:installer": "electron-builder --win nsis --x64"
+  },
+  "build": {
+    "appId": "in.docufast.agent",
+    "productName": "DocuFast Agent",
+    "copyright": "Copyright \u00a9 2026 DocuFast India",
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": false,
+      "createStartMenuShortcut": true,
+      "shortcutName": "DocuFast Agent",
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "runAfterFinish": true,
+      "license": null
+    },
+    "extraResources": [
+      {
+        "from": "assets/",
+        "to": "assets/",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "files": [
+      "src/**/*",
+      "dashboard/**/*",
+      "assets/**/*",
+      "node_modules/**/*",
+      "package.json"
+    ],
+    "publish": {
+      "provider": "github",
+      "owner": "syedfayazali",
+      "repo": "Docufast-Desktop"
+    }
+  },
+  "dependencies": {
+    "auto-launch": "^5.0.6",
+    "electron-store": "^8.1.0",
+    "node-fetch": "^3.3.2",
+    "electron-updater": "^6.8.9"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  }
+}

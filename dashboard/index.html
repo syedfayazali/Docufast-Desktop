@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline';">
+<title>DocuFast Agent</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="brand">
+      <img id="brandLogoImg" alt="DocuFast India" class="brand-logo" onerror="this.style.display='none';document.getElementById('brandText').style.display='flex'">
+      <div class="brand-text" id="brandText" style="display:none;">Docu<span>Fast</span></div>
+    </div>
+    <div class="brand-shop" id="brandShop" style="display:none;"></div>
+    <div class="nav-items">
+      <button class="nav-btn active" data-tab="dashboard" onclick="switchTab('dashboard')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </button>
+      <button class="nav-btn" data-tab="jobs" onclick="switchTab('jobs')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Print jobs
+      </button>
+      <button class="nav-btn" data-tab="setup" onclick="switchTab('setup')">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+        Settings
+      </button>
+    </div>
+    <div class="status-dot-wrap">
+      <div class="status-dot" id="statusDot"></div>
+      <span class="status-label" id="statusLabel">Connecting…</span>
+    </div>
+  </nav>
+
+  <!-- Main content -->
+  <main class="content">
+
+    <!-- Dashboard tab -->
+    <div class="tab active" id="tab-dashboard">
+      <div class="tab-header">
+        <h1>Dashboard</h1>
+        <span class="shop-name-badge" id="shopNameBadge" style="display:none;"></span>
+        <span class="last-poll" id="lastPoll"></span>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi-num" id="kpiJobsToday">0</div>
+          <div class="kpi-lbl">Jobs today</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-num" id="kpiRevenue">₹0</div>
+          <div class="kpi-lbl">Revenue today</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-num" id="kpiPending">0</div>
+          <div class="kpi-lbl">Pending</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-num" id="kpiPrinter">—</div>
+          <div class="kpi-lbl">Printer</div>
+        </div>
+      </div>
+
+      <h2 style="margin:24px 0 12px;">Recent jobs</h2>
+      <div class="jobs-table-wrap">
+        <table class="jobs-table">
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>File</th>
+              <th>Type</th>
+              <th>Uploaded</th>
+              <th>Printed at</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="dashJobRows">
+            <tr><td colspan="6" class="empty-cell">No jobs yet today</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Jobs tab — full history with timestamps -->
+    <div class="tab" id="tab-jobs">
+      <div class="tab-header">
+        <h1>Print jobs</h1>
+        <div class="filter-row">
+          <select id="statusFilter" onchange="renderJobsTab()">
+            <option value="">All statuses</option>
+            <option value="printed">Printed</option>
+            <option value="printing">Printing</option>
+            <option value="failed">Failed</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="jobs-table-wrap">
+        <table class="jobs-table">
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>File</th>
+              <th>Pages × copies</th>
+              <th>Color</th>
+              <th>Started</th>
+              <th>Printed at</th>
+              <th>Duration</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="jobsTabRows">
+            <tr><td colspan="8" class="empty-cell">No jobs yet</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Settings tab -->
+    <div class="tab" id="tab-setup">
+      <div class="tab-header"><h1>Settings</h1></div>
+
+      <div class="settings-card">
+        <h2>Shop connection</h2>
+        <div class="field">
+          <label>Shop API key</label>
+          <input type="password" id="cfgAgentKey" placeholder="Your shop's API key from DocuFast owner dashboard">
+          <div class="field-hint">Given to you by DocuFast India when your shop was registered</div>
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <h2>Printer</h2>
+        <div class="field">
+          <label>Printer</label>
+          <select id="cfgPrinterName">
+            <option value="">Use Windows default printer</option>
+          </select>
+          <div class="field-hint">Choose from printers Windows can see on this PC. Refreshes each time you open Settings.</div>
+        </div>
+        <div class="field">
+          <label>SumatraPDF path</label>
+          <input type="text" id="cfgSumatraPath" placeholder="C:\Users\ADMIN\AppData\Local\SumatraPDF\SumatraPDF.exe">
+          <div class="field-hint">Required for silent printing with correct B&W / color / duplex settings</div>
+        </div>
+      </div>
+
+      <div class="settings-card">
+        <h2>Agent behaviour</h2>
+        <div class="field">
+          <label>Poll interval (seconds)</label>
+          <input type="number" id="cfgPollMs" min="3" max="60" value="5">
+          <div class="field-hint">How often to check for new jobs (3–60 seconds)</div>
+        </div>
+        <div class="field checkbox-field">
+          <input type="checkbox" id="cfgAutoLaunch" checked>
+          <label for="cfgAutoLaunch">Start automatically when Windows starts</label>
+        </div>
+      </div>
+
+      <div class="settings-actions">
+        <button class="btn-save" onclick="saveSettings()">Save settings</button>
+        <div class="save-msg" id="saveMsg"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
