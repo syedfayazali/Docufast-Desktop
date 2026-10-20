@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline';">
+<title>DocuFast Agent — Setup</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  body { display:flex; align-items:center; justify-content:center; min-height:100vh; background:#f5f6fa; }
+  .card { background:#fff; border-radius:16px; padding:40px; width:440px; box-shadow:0 4px 24px rgba(10,46,110,0.12); text-align:center; }
+  .logo { height:56px; display:block; margin:0 auto 28px; }
+  .logo-fallback { font-family:'Space Grotesk',sans-serif; font-size:26px; font-weight:700; color:#0A2E6E; margin-bottom:28px; display:none; }
+  .logo-fallback span { color:#F4B000; }
+  h1 { font-family:'Space Grotesk',sans-serif; font-size:20px; font-weight:700; color:#0A2E6E; margin-bottom:8px; }
+  .sub { font-size:13px; color:#5B6478; margin-bottom:32px; line-height:1.6; }
+  .key-input { width:100%; padding:14px 16px; border:2px solid #E2E6EE; border-radius:10px; font-size:15px; font-family:'IBM Plex Mono',monospace; color:#071F4D; text-align:center; letter-spacing:0.04em; margin-bottom:10px; }
+  .key-input:focus { outline:none; border-color:#F4B000; }
+  .btn { width:100%; padding:14px; background:#F4B000; color:#071F4D; border:none; border-radius:10px; font-size:16px; font-weight:700; font-family:'Space Grotesk',sans-serif; cursor:pointer; margin-top:6px; }
+  .btn:hover { background:#C98C00; }
+  .btn:disabled { background:#E2E6EE; color:#8A91A3; cursor:not-allowed; }
+  .err { font-size:13px; color:#B3261E; margin-top:10px; min-height:20px; }
+  .hint { font-size:12px; color:#8A91A3; margin-top:14px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <img id="logoImg" class="logo" alt="DocuFast India"
+    onerror="this.style.display='none';document.getElementById('lf').style.display='block'">
+  <div class="logo-fallback" id="lf">Docu<span>Fast</span></div>
+
+  <h1>Welcome to DocuFast Agent</h1>
+  <div class="sub">
+    Paste your shop key below to get started.<br>
+    Your documents will print automatically after payment.
+  </div>
+
+  <input class="key-input" type="password" id="apiKey"
+    placeholder="Paste your shop key here"
+    autocomplete="off" spellcheck="false">
+
+  <button class="btn" id="setupBtn" onclick="setup()">Activate →</button>
+  <div class="err" id="err"></div>
+  <div class="hint">Your shop key was given to you by DocuFast India</div>
+</div>
+
+<script>
+document.getElementById('apiKey').addEventListener('keydown', e => {
+  if (e.key === 'Enter') setup();
+});
+
+// A relative "../assets/logo.png" can't resolve here (this page loads from
+// inside app.asar, but assets/ only exists at resources/assets/ in the
+// packaged app) — ask the main process for a proper file:// URL instead.
+(async () => {
+  const logoUrl = await window.docufast.getAssetUrl('logo.png');
+  if (logoUrl) document.getElementById('logoImg').src = logoUrl;
+  else document.getElementById('logoImg').dispatchEvent(new Event('error'));
+})();
+
+async function setup() {
+  const key = document.getElementById('apiKey').value.trim();
+  const err = document.getElementById('err');
+  const btn = document.getElementById('setupBtn');
+  err.textContent = '';
+
+  if (!key) {
+    err.textContent = 'Please paste your shop key.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Activating…';
+
+  try {
+    // Verify the key via the main process — a direct fetch() from this
+    // file:// page is blocked by CORS and fails with "Failed to fetch".
+    const result = await window.docufast.verifyKey(key);
+    if (!result.ok) throw new Error(result.error);
+
+    // Save and start
+    await window.docufast.saveConfig({
+      agentKey: key,
+      autoLaunch: true,
+      pollMs: 10000,
+    });
+
+    btn.textContent = '✓ Activated!';
+    btn.style.background = '#2E6B4F';
+    btn.style.color = '#fff';
+    setTimeout(() => window.close(), 1200);
+
+  } catch (e) {
+    err.textContent = e.message;
+    btn.disabled = false;
+    btn.textContent = 'Activate →';
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,5 @@
+node_modules/
+dist/
+# Installers are published as GitHub Releases, never committed.
+*.exe
+*.blockmap
