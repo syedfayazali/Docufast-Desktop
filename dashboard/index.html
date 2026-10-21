@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; img-src 'self' file: data:;">
+<title>DocuFast Agent</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="shell">
+
+  <nav class="sidebar">
+    <div class="brand">
+      <img id="brandLogoImg" alt="DocuFast India" class="brand-logo" onerror="this.style.display='none';document.getElementById('brandText').style.display='block'">
+      <div class="brand-text" id="brandText" style="display:none;">Docu<span>Fast</span></div>
+      <div class="brand-shop" id="brandShop"></div>
+    </div>
+
+    <div class="nav-items">
+      <button class="nav-btn active" data-tab="dashboard" onclick="switchTab('dashboard')">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard
+      </button>
+      <button class="nav-btn" data-tab="jobs" onclick="switchTab('jobs')">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Print jobs
+        <span class="nav-badge" id="navFailedBadge" style="display:none;">0</span>
+      </button>
+      <button class="nav-btn" data-tab="setup" onclick="switchTab('setup')">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings
+      </button>
+    </div>
+
+    <div class="side-foot">
+      <div class="status-row"><span class="status-dot" id="statusDot"></span><span id="statusLabel">Connecting…</span></div>
+      <div class="ver" id="appVer"></div>
+    </div>
+  </nav>
+
+  <main class="content">
+
+    <!-- ========== DASHBOARD ========== -->
+    <section class="tab active" id="tab-dashboard">
+      <header class="page-head">
+        <div>
+          <h1>Dashboard</h1>
+          <div class="sub"><span id="shopNameBadge"></span><span id="lastPoll"></span></div>
+        </div>
+        <button class="btn" id="pauseBtn" onclick="togglePause()">Pause printing</button>
+      </header>
+
+      <div class="banner warn" id="pausedBanner" style="display:none;">
+        <strong>Printing is paused.</strong> New paid jobs will wait until you resume.
+        <button class="btn sm" onclick="togglePause()">Resume</button>
+      </div>
+      <div class="banner err" id="failedBanner" style="display:none;">
+        <span><strong id="failedCount">0</strong> job(s) failed to print. Customers have already paid.</span>
+        <button class="btn sm" onclick="switchTab('jobs')">Review &amp; retry</button>
+      </div>
+      <div class="banner err" id="dupBanner" style="display:none;"></div>
+
+      <div class="kpi-grid">
+        <div class="kpi"><div class="kpi-num" id="kpiJobsToday">0</div><div class="kpi-lbl">Printed today</div></div>
+        <div class="kpi"><div class="kpi-num" id="kpiRevenue">₹0</div><div class="kpi-lbl">Revenue today</div></div>
+        <div class="kpi"><div class="kpi-num" id="kpiPending">0</div><div class="kpi-lbl">Waiting to print</div></div>
+        <div class="kpi"><div class="kpi-num sm" id="kpiPrinter">—</div><div class="kpi-lbl">Printer</div></div>
+      </div>
+
+      <h2 class="section-title">Recent jobs</h2>
+      <div class="table-wrap">
+        <table class="jobs-table">
+          <thead><tr><th>Code</th><th>File</th><th>Type</th><th>Uploaded</th><th>Printed</th><th>Status</th></tr></thead>
+          <tbody id="dashJobRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ========== JOBS ========== -->
+    <section class="tab" id="tab-jobs">
+      <header class="page-head">
+        <div><h1>Print jobs</h1><div class="sub">Last 50 jobs for this shop</div></div>
+        <div class="head-tools">
+          <input type="search" id="jobSearch" placeholder="Search code or file…" oninput="renderJobsTab()">
+          <select id="statusFilter" onchange="renderJobsTab()">
+            <option value="">All statuses</option>
+            <option value="printed">Printed</option>
+            <option value="printing">Printing</option>
+            <option value="failed">Failed</option>
+            <option value="paid">Waiting</option>
+          </select>
+          <button class="btn" id="retryAllBtn" onclick="retryAllFailed()" style="display:none;">Retry all failed</button>
+        </div>
+      </header>
+      <div class="table-wrap">
+        <table class="jobs-table">
+          <thead><tr><th>Code</th><th>File</th><th>Pages × copies</th><th>Type</th><th>Started</th><th>Printed</th><th>Status</th><th></th></tr></thead>
+          <tbody id="jobsTabRows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ========== SETTINGS ========== -->
+    <section class="tab" id="tab-setup">
+      <header class="page-head">
+        <div><h1>Settings</h1><div class="sub">Everything a shop needs to get clean prints. Changes apply to the next job.</div></div>
+      </header>
+
+      <div class="cards">
+
+        <!-- Printer -->
+        <div class="card">
+          <h2>Printer</h2>
+          <div class="field">
+            <label for="cfgPrinterName">Print to</label>
+            <div class="inline">
+              <select id="cfgPrinterName" onchange="onPrinterChange()"></select>
+              <button class="btn sm" type="button" onclick="loadPrinterOptions(val('cfgPrinterName'))">Refresh</button>
+            </div>
+            <div class="hint">Pick the exact printer jobs should go to. “Windows default” follows whatever Windows has set.</div>
+          </div>
+          <div class="info-box" id="printerInfo">Select a printer to see what Windows reports about it.</div>
+          <div class="btn-row">
+            <button class="btn primary" id="testPrintBtn" type="button" onclick="runTestPrint()">Print test page</button>
+            <span class="inline-msg" id="testMsg"></span>
+          </div>
+          <div class="hint">The test page has a near-edge border, corner diagonals and a 1-inch square — it shows scaling or paper-size problems immediately, using your saved settings (save first if you just changed something).</div>
+        </div>
+
+        <!-- Connection + agent -->
+        <div class="card">
+          <h2>Shop connection</h2>
+          <div class="field">
+            <label for="cfgAgentKey">Shop key</label>
+            <div class="inline">
+              <input type="password" id="cfgAgentKey" oninput="markDirty()" placeholder="Key from the DocuFast owner dashboard">
+              <button class="btn sm" type="button" onclick="toggleKey()">Show</button>
+            </div>
+          </div>
+          <div class="grid2">
+            <div class="field">
+              <label for="cfgPollMs">Check for new jobs every</label>
+              <div class="inline"><input type="number" id="cfgPollMs" min="3" max="60" oninput="markDirty()"><span class="unit">seconds</span></div>
+              <div class="hint">10 is a good balance. Lower = faster printing, more server usage.</div>
+            </div>
+            <div class="field">
+              <label for="cfgPrintTimeout">Give up on a stuck print after</label>
+              <div class="inline"><input type="number" id="cfgPrintTimeout" min="20" max="600" oninput="markDirty()"><span class="unit">seconds</span></div>
+              <div class="hint">Raise this for very large files.</div>
+            </div>
+          </div>
+          <div class="check">
+            <input type="checkbox" id="cfgAutoLaunch" onchange="markDirty()">
+            <label for="cfgAutoLaunch"><strong>Start with Windows</strong><span>The agent opens in the tray when the PC turns on.</span></label>
+          </div>
+          <div class="check">
+            <input type="checkbox" id="cfgNotifications" onchange="markDirty()">
+            <label for="cfgNotifications"><strong>Desktop notifications</strong><span>Pop-up when a job prints or fails.</span></label>
+          </div>
+        </div>
+
+        <!-- Print preferences -->
+        <div class="card wide">
+          <h2>Print preferences</h2>
+          <div class="grid3">
+            <div class="field">
+              <label for="cfgPaperSize">Paper size</label>
+              <select id="cfgPaperSize" onchange="markDirty()">
+                <option value="auto">Printer default (recommended)</option>
+                <option value="A4">A4</option><option value="A3">A3</option><option value="A5">A5</option>
+                <option value="letter">Letter</option><option value="legal">Legal</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="cfgScaling">Page scaling</label>
+              <select id="cfgScaling" onchange="markDirty()">
+                <option value="fit">Fit to page (recommended)</option>
+                <option value="shrink">Shrink only if too big</option>
+                <option value="noscale">Actual size (100%)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="cfgOrientation">Orientation</label>
+              <select id="cfgOrientation" onchange="markDirty()">
+                <option value="auto">Automatic (per page)</option>
+                <option value="portrait">Always portrait</option>
+                <option value="landscape">Always landscape</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="cfgTrayBin">Paper tray number</label>
+              <input type="number" id="cfgTrayBin" min="0" max="99" oninput="markDirty()">
+              <div class="hint">0 = printer's default tray.</div>
+            </div>
+            <div class="field">
+              <label for="cfgColorPolicy">Colour</label>
+              <select id="cfgColorPolicy" onchange="markDirty()">
+                <option value="follow">Follow the customer's choice</option>
+                <option value="bw">Always print black &amp; white</option>
+                <option value="color">Always print colour</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="cfgDuplexPolicy">Double-sided</label>
+              <select id="cfgDuplexPolicy" onchange="markDirty()">
+                <option value="follow">Follow the customer's choice</option>
+                <option value="never">Never — always single-sided</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="cfgDuplexEdge">Double-sided flip edge</label>
+              <select id="cfgDuplexEdge" onchange="markDirty()">
+                <option value="long">Long edge (normal documents)</option>
+                <option value="short">Short edge (calendar style)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="check">
+            <input type="checkbox" id="cfgSafePrint" onchange="markDirty()">
+            <label for="cfgSafePrint"><strong>Safe print mode</strong><span>Use if a printer prints a small block or garbage. Sends only copies + scaling and ignores everything else above.</span></label>
+          </div>
+
+          <div class="preview">
+            <div class="preview-head">What will be sent to the printer <button class="link" type="button" onclick="refreshPreview()">refresh</button></div>
+            <div class="mono" id="prevBw">—</div>
+            <div class="mono" id="prevColor">—</div>
+            <div class="hint" id="prevNotes"></div>
+          </div>
+        </div>
+
+        <!-- PDF engine -->
+        <div class="card">
+          <h2>PDF printing engine</h2>
+          <div class="field">
+            <label for="cfgSumatraPath">SumatraPDF location</label>
+            <div class="inline">
+              <input type="text" id="cfgSumatraPath" oninput="markDirty()" placeholder="C:\Users\…\SumatraPDF.exe">
+              <button class="btn sm" type="button" onclick="detectSumatra()">Auto-detect</button>
+            </div>
+            <div class="hint" id="sumatraMsg">Needed for silent printing with the right colour / duplex / paper settings.</div>
+          </div>
+        </div>
+
+        <!-- Diagnostics -->
+        <div class="card">
+          <h2>Diagnostics &amp; updates</h2>
+          <div class="btn-row">
+            <button class="btn" type="button" onclick="loadLog()">Show print log</button>
+            <button class="btn" type="button" onclick="copyLog()">Copy log</button>
+            <button class="btn" type="button" onclick="window.docufast.openLogFolder()">Open log folder</button>
+            <button class="btn" type="button" onclick="checkUpdates()">Check for updates</button>
+            <span class="inline-msg" id="updMsg"></span>
+          </div>
+          <pre class="log" id="logBox" style="display:none;"></pre>
+          <div class="hint">If a printer misbehaves, copy the log and send it to DocuFast support along with the printer's brand and model.</div>
+        </div>
+      </div>
+
+      <div class="savebar" id="saveBar">
+        <span id="dirtyMsg">All changes saved</span>
+        <div>
+          <button class="btn" type="button" id="discardBtn" onclick="loadSettings()" disabled>Discard</button>
+          <button class="btn primary" type="button" id="saveBtn" onclick="saveSettings()" disabled>Save settings</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+<script src="app.js"></script>
+</body>
+</html>

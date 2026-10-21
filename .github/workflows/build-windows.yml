@@ -1,0 +1,30 @@
+# Builds the Windows installer on GitHub's own Windows machine and publishes
+# it as a GitHub Release: one clean "DocuFast Agent Setup X.X.X.exe" to
+# download, plus the latest.yml file the in-app auto-updater reads.
+#
+# To ship a new version: bump "version" in package.json, push, then
+# GitHub -> Actions -> "Build Windows installer" -> Run workflow.
+name: Build Windows installer
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: write   # lets the built-in token create the Release
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Build and publish installer
+        run: npx electron-builder --win nsis --x64 --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
