@@ -36,6 +36,9 @@ const store = new Store({
     paperSize:   { type: 'string', default: 'auto' },   // auto | A3 | A4 | A5 | letter | legal
     // Safe mode: send only the copy count + fit-to-page, nothing the driver could misread.
     safePrint:   { type: 'boolean', default: false },
+    // Photos/scans are printed through Windows' own print path (Chromium),
+    // which sizes the page correctly on every driver; SumatraPDF is kept for PDFs.
+    imageEngine: { type: 'string', default: 'windows' }, // windows | sumatra
     scaling:     { type: 'string', default: 'fit' },    // fit | shrink | noscale
     orientation: { type: 'string', default: 'auto' },   // auto | portrait | landscape
     colorPolicy: { type: 'string', default: 'follow' }, // follow (what customer chose) | bw | color
@@ -323,11 +326,12 @@ function openDashboard(tab = 'dashboard') {
 ipcMain.handle('get-config', () => ({ ...store.store, printedCodes: undefined, cloudUrl: CLOUD_URL, appVersion: app.getVersion(), logDir: getLogDir() }));
 const SETTABLE = {
   agentKey: 'string', sumatraPath: 'string', printerName: 'string', autoLaunch: 'boolean',
-  pollMs: 'number', paperSize: 'string', safePrint: 'boolean', scaling: 'string',
+  pollMs: 'number', imageEngine: 'string', paperSize: 'string', safePrint: 'boolean', scaling: 'string',
   orientation: 'string', colorPolicy: 'string', duplexPolicy: 'string', duplexEdge: 'string',
   trayBin: 'number', printTimeoutSec: 'number', paused: 'boolean', notifications: 'boolean',
 };
 const ALLOWED = {
+  imageEngine: ['windows', 'sumatra'],
   paperSize: ['auto', 'A3', 'A4', 'A5', 'letter', 'legal'],
   scaling: ['fit', 'shrink', 'noscale'],
   orientation: ['auto', 'portrait', 'landscape'],
@@ -821,6 +825,65 @@ async function makePrintable(filePath, ext, buffer) {
   throw new Error('This is a Word file and this PC has neither Microsoft Word nor LibreOffice to convert it. Install LibreOffice (free) on the shop PC, or ask the customer to upload a PDF.');
 }
 
+const IMAGE_TYPES = new Set(['.jpg', '.jpeg', '.png', '.bmp', '.gif', '.webp', '.tif', '.tiff']);
+function isImageExt(ext) { return IMAGE_TYPES.has((ext || '').toLowerCase()); }
+
+// Prints a photo/scan through Windows' normal print pipeline (the same one
+// Chrome uses). SumatraPDF sizes an image from its pixel size and DPI
+// metadata, which on some printers/drivers gives a small clipped patch of
+// the picture instead of the whole page. Here the image is simply laid out
+// to fill the paper, centred and scaled to fit, and the driver gets a normal
+// page-sized job.
+async function printImageWindows(filePath, copies, colorMode, duplex) {
+  const printerName = store.get('printerName');
+  const htmlPath = filePath + '.print.html';
+  const mimeOk = path.extname(filePath).toLowerCase();
+  const paper = store.get('paperSize');
+  const pageSize = ['A3', 'A4', 'A5', 'Legal', 'Letter'].find(n => n.toLowerCase() === String(paper).toLowerCase()) || 'A4';
+  const scaling = store.get('scaling');
+  const fitCss = scaling === 'noscale' ? 'object-fit:none' : scaling === 'shrink' ? 'object-fit:scale-down' : 'object-fit:contain';
+
+  fs.writeFileSync(htmlPath,
+    '<!doctype html><meta charset="utf-8"><style>' +
+    `@page{size:${pageSize};margin:0}html,body{margin:0;padding:0;width:100%;height:100%;background:#fff}` +
+    `img{display:block;width:100vw;height:100vh;${fitCss}}</style>` +
+    `<img id="i" src="${url.pathToFileURL(filePath).href}">`);
+
+  const win = new BrowserWindow({ show: false, webPreferences: { sandbox: true, contextIsolation: true } });
+  try {
+    await win.loadFile(htmlPath);
+    const dims = await win.webContents.executeJavaScript(
+      'new Promise(r=>{const i=document.getElementById("i");const f=()=>r([i.naturalWidth,i.naturalHeight]);(i.complete&&i.naturalWidth)?f():(i.onload=f,i.onerror=()=>r([0,0]))})');
+    if (!dims[0]) throw new Error('The image could not be opened (damaged or unsupported picture file).');
+
+    const orientation = store.get('orientation');
+    const landscape = orientation === 'landscape' || (orientation !== 'portrait' && dims[0] > dims[1]);
+    const color = store.get('safePrint') ? true : (store.get('colorPolicy') === 'bw' ? false : store.get('colorPolicy') === 'color' ? true : colorMode === 'color');
+    const wantDuplex = !store.get('safePrint') && duplex && store.get('duplexPolicy') !== 'never';
+    const opts = {
+      silent: true, printBackground: true, color, landscape,
+      copies: Math.max(1, parseInt(copies, 10) || 1),
+      margins: { marginType: 'none' },
+      pageSize,
+      duplexMode: wantDuplex ? (store.get('duplexEdge') === 'short' ? 'shortEdge' : 'longEdge') : 'simplex',
+    };
+    if (printerName) opts.deviceName = printerName;
+    logPrint(`PRINT IMAGE ${path.basename(filePath)} ${dims[0]}x${dims[1]}px via Windows print | printer="${printerName || '(Windows default)'}" | ${JSON.stringify({ ...opts, margins: undefined, deviceName: undefined })}`);
+
+    await new Promise((resolve, reject) => {
+      const t = setTimeout(() => reject(new Error('Image print timed out - printer may be offline or the queue is stuck.')), (store.get('printTimeoutSec') || 90) * 1000);
+      win.webContents.print(opts, (ok, reason) => {
+        clearTimeout(t);
+        logPrint(`  -> image print ${ok ? 'sent to spooler' : 'FAILED: ' + reason}`);
+        ok ? resolve() : reject(new Error(`Windows print failed: ${reason || 'unknown reason'}`));
+      });
+    });
+  } finally {
+    if (!win.isDestroyed()) win.destroy();
+    fs.unlink(htmlPath, () => {});
+  }
+}
+
 async function postResult(cloudUrl, agentKey, code, body, tries = 4) {
   const fetch = (await import('node-fetch')).default;
   for (let i = 0; i < tries; i++) {
@@ -898,7 +961,11 @@ async function handleJob(job, cloudUrl, agentKey) {
     logPrint(`JOB ${job.code} "${job.filename}" ${buffer.length} bytes, attempt ${job.attempt || 1}, copies=${job.copies} color=${job.colorMode} duplex=${job.duplex}`);
 
     printablePath = await makePrintable(tempPath, ext, buffer);
-    await printFile(printablePath, job.copies, job.colorMode, job.duplex);
+    if (isImageExt(ext) && store.get('imageEngine') !== 'sumatra' && !/^\.tiff?$/i.test(ext)) {
+      await printImageWindows(printablePath, job.copies, job.colorMode, job.duplex);
+    } else {
+      await printFile(printablePath, job.copies, job.colorMode, job.duplex);
+    }
     rememberPrinted(job.code);
 
     const reported = await postResult(cloudUrl, agentKey, job.code, { success: true });

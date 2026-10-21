@@ -121,7 +121,7 @@ const FIELDS = {
   agentKey: ['cfgAgentKey', 'text'], sumatraPath: ['cfgSumatraPath', 'text'], printerName: ['cfgPrinterName', 'text'],
   paperSize: ['cfgPaperSize', 'text'], scaling: ['cfgScaling', 'text'], orientation: ['cfgOrientation', 'text'],
   colorPolicy: ['cfgColorPolicy', 'text'], duplexPolicy: ['cfgDuplexPolicy', 'text'], duplexEdge: ['cfgDuplexEdge', 'text'],
-  trayBin: ['cfgTrayBin', 'num'], safePrint: ['cfgSafePrint', 'bool'], autoLaunch: ['cfgAutoLaunch', 'bool'],
+  trayBin: ['cfgTrayBin', 'num'], imageEngine: ['cfgImageEngine', 'text'], safePrint: ['cfgSafePrint', 'bool'], autoLaunch: ['cfgAutoLaunch', 'bool'],
   notifications: ['cfgNotifications', 'bool'],
 };
 

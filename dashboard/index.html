@@ -229,7 +229,15 @@
 
         <!-- PDF engine -->
         <div class="card">
-          <h2>PDF printing engine</h2>
+          <h2>Printing engine</h2>
+          <div class="field">
+            <label for="cfgImageEngine">Photos &amp; scans (JPG / PNG)</label>
+            <select id="cfgImageEngine" onchange="markDirty()">
+              <option value="windows">Windows print (recommended)</option>
+              <option value="sumatra">SumatraPDF</option>
+            </select>
+            <div class="hint">Windows print fills the page correctly on every printer. Switch to SumatraPDF only if photos look wrong with it. PDFs always use SumatraPDF.</div>
+          </div>
           <div class="field">
             <label for="cfgSumatraPath">SumatraPDF location</label>
             <div class="inline">
