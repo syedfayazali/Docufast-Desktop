@@ -3,14 +3,15 @@
 # download, plus the latest.yml file the in-app auto-updater reads.
 #
 # To ship a new version: bump "version" in package.json, push, then
-# push a matching tag (git tag v1.0.16 && git push origin v1.0.16), or run it
+# push a change to the app files on main (it builds automatically), or run it
 # by hand from GitHub -> Actions -> "Build Windows installer" -> Run workflow.
 name: Build Windows installer
 
 on:
   workflow_dispatch:
   push:
-    tags: ['v*']   # pushing a tag like v1.0.16 builds and publishes automatically
+    branches: [main]
+    paths: ['package.json', 'src/**', 'dashboard/**', 'assets/**', '.github/workflows/build-windows.yml']
 
 jobs:
   build:
