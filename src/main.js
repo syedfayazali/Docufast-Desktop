@@ -21,6 +21,13 @@ app.setName('DocuFast Agent');
 // To update it, change this constant and rebuild the .exe.
 const CLOUD_URL = 'https://docufast-nu.vercel.app';
 
+// Live wake-up connection (Supabase Realtime). The anon key is public by
+// design: it can only read/send the empty shop wake-up pings allowed by the
+// database policies; all real data still goes through the authenticated API.
+const SUPABASE_URL = 'https://chqennbbwkyhmemfubtj.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNocWVubmJid2t5aG1lbWZ1YnRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMxNjY3NDAsImV4cCI6MjEwODc0Mjc0MH0.SDpg_abhMEO4lNmeOUguSFteEt3kecDu-7SxdfwbKSU';
+const PUSH_FALLBACK_POLL_MS = 120000; // safety poll while the live connection is healthy
+
 const Store = require('electron-store');
 const store = new Store({
   schema: {
@@ -46,6 +53,7 @@ const store = new Store({
     duplexEdge:  { type: 'string', default: 'long' },   // long | short
     trayBin:     { type: 'number', default: 0 },        // 0 = printer default tray
     printTimeoutSec: { type: 'number', default: 90 },
+    livePush:    { type: 'boolean', default: true },    // instant wake-up when a customer pays
     paused:      { type: 'boolean', default: false },   // stop picking up new jobs (paper out, etc.)
     notifications: { type: 'boolean', default: true },
     printedCodes: { type: 'array', default: [] },       // last jobs printed here (guards against re-printing)
@@ -133,6 +141,7 @@ const stats = {
   duplicateKey: false,     // true if this shop key is already active on another PC
   duplicateMessage: '',
   paused: false,
+  push: 'off',            // off | connecting | connected | down
 };
 
 // ---- App lifecycle ----
@@ -267,6 +276,7 @@ function updateTrayMenu() {
     { label: 'Open dashboard', click: () => openDashboard() },
     { label: 'Settings', click: () => openDashboard('setup') },
     { label: 'Safe print mode (use if a printer prints a small block)', type: 'checkbox', checked: !!store.get('safePrint'), click: (mi) => { store.set('safePrint', mi.checked); } },
+    { label: `Live connection: ${stats.push === 'connected' ? 'on (instant printing)' : stats.push === 'off' ? 'off' : stats.push === 'connecting' ? 'connecting…' : 'down, checking every ' + Math.round(store.get('pollMs') / 1000) + 's'}`, enabled: false },
     { label: 'Open print log folder', click: () => { fs.mkdirSync(getLogDir(), { recursive: true }); shell.openPath(getLogDir()); } },
     { type: 'separator' },
     ...(updateReady ? [
@@ -326,7 +336,7 @@ function openDashboard(tab = 'dashboard') {
 ipcMain.handle('get-config', () => ({ ...store.store, printedCodes: undefined, cloudUrl: CLOUD_URL, appVersion: app.getVersion(), logDir: getLogDir() }));
 const SETTABLE = {
   agentKey: 'string', sumatraPath: 'string', printerName: 'string', autoLaunch: 'boolean',
-  pollMs: 'number', imageEngine: 'string', paperSize: 'string', safePrint: 'boolean', scaling: 'string',
+  pollMs: 'number', livePush: 'boolean', imageEngine: 'string', paperSize: 'string', safePrint: 'boolean', scaling: 'string',
   orientation: 'string', colorPolicy: 'string', duplexPolicy: 'string', duplexEdge: 'string',
   trayBin: 'number', printTimeoutSec: 'number', paused: 'boolean', notifications: 'boolean',
 };
@@ -545,6 +555,47 @@ ipcMain.handle('verify-key', async (_, key) => {
 });
 
 // ---- Print agent loop ----
+let pushHandle = null;
+let wakePending = false;
+
+// Poll quickly when there is no live connection, slowly (safety net only)
+// when push is healthy.
+function applyPollInterval() {
+  if (stats.duplicateKey) return;
+  if (pollTimer) clearInterval(pollTimer);
+  const ms = stats.push === 'connected' ? PUSH_FALLBACK_POLL_MS : store.get('pollMs');
+  pollTimer = setInterval(pollOnce, ms);
+}
+
+function startPushConnection() {
+  if (pushHandle) { pushHandle.stop(); pushHandle = null; }
+  const key = store.get('agentKey');
+  if (!key || !store.get('livePush')) { stats.push = 'off'; return; }
+  stats.push = 'connecting';
+  try {
+    pushHandle = require('./push').startPush({
+      agentKey: key,
+      url: SUPABASE_URL,
+      anonKey: SUPABASE_ANON_KEY,
+      log: logPrint,
+      onWake: () => {
+        logPrint('push: wake-up received');
+        if (isPolling) wakePending = true; else pollOnce();
+      },
+      onState: s => {
+        stats.push = s;
+        applyPollInterval();
+        if (s === 'connected') pollOnce(); // catch anything missed while disconnected
+        updateTrayMenu();
+        broadcastStats();
+      },
+    });
+  } catch (e) {
+    logPrint(`push: failed to start - ${e.message}`);
+    stats.push = 'down';
+  }
+}
+
 function startAgent() {
   if (pollTimer) clearInterval(pollTimer);
   if (heartbeatTimer) clearInterval(heartbeatTimer);
@@ -552,7 +603,8 @@ function startAgent() {
   agentRunning = true;
   pollOnce();
   fetchShopData();
-  pollTimer = setInterval(pollOnce, store.get('pollMs'));
+  startPushConnection();
+  applyPollInterval();
   heartbeat();
   // Heartbeat and shop-data used to run on constant 15s/30s timers
   // regardless of activity — most of that was wasted calls while a shop
@@ -697,6 +749,7 @@ function handleDuplicateKey(message) {
   stats.duplicateKey = true;
   stats.duplicateMessage = message || 'This shop key is already active on another computer.';
   if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+  if (pushHandle) { pushHandle.stop(); pushHandle = null; stats.push = 'off'; }
   agentRunning = false;
 
   if (!duplicateKeyNotified) {
@@ -756,6 +809,8 @@ async function pollOnce() {
     isPolling = false;
   }
   broadcastStats();
+  // A wake-up arrived while we were busy printing: check again right away.
+  if (wakePending) { wakePending = false; pollOnce(); }
 }
 
 // Remember the last jobs this PC printed. If the "printed" report to the

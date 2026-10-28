@@ -39,6 +39,7 @@ function applyStats(stats) {
   $('kpiJobsToday').textContent = stats.jobsToday;
   $('kpiRevenue').textContent = '₹' + ((stats.revenueToday || 0) / 100).toFixed(2);
   $('kpiPending').textContent = stats.pending;
+  if ($('pushState')) $('pushState').textContent = { connected: 'Status: connected', connecting: 'Status: connecting…', down: 'Status: down (using regular checks)', off: 'Status: off' }[stats.push] || '';
   $('kpiPrinter').textContent = stats.duplicateKey ? 'Blocked' : stats.paused ? 'Paused' : stats.connected ? 'Online' : 'Offline';
 
   if (stats.shopName) { $('shopNameBadge').textContent = stats.shopName; $('brandShop').textContent = stats.shopName; }
@@ -121,7 +122,7 @@ const FIELDS = {
   agentKey: ['cfgAgentKey', 'text'], sumatraPath: ['cfgSumatraPath', 'text'], printerName: ['cfgPrinterName', 'text'],
   paperSize: ['cfgPaperSize', 'text'], scaling: ['cfgScaling', 'text'], orientation: ['cfgOrientation', 'text'],
   colorPolicy: ['cfgColorPolicy', 'text'], duplexPolicy: ['cfgDuplexPolicy', 'text'], duplexEdge: ['cfgDuplexEdge', 'text'],
-  trayBin: ['cfgTrayBin', 'num'], imageEngine: ['cfgImageEngine', 'text'], safePrint: ['cfgSafePrint', 'bool'], autoLaunch: ['cfgAutoLaunch', 'bool'],
+  trayBin: ['cfgTrayBin', 'num'], livePush: ['cfgLivePush', 'bool'], imageEngine: ['cfgImageEngine', 'text'], safePrint: ['cfgSafePrint', 'bool'], autoLaunch: ['cfgAutoLaunch', 'bool'],
   notifications: ['cfgNotifications', 'bool'],
 };
 

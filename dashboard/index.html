@@ -219,6 +219,11 @@
             <label for="cfgSafePrint"><strong>Safe print mode</strong><span>Use if a printer prints a small block or garbage. Sends only copies + scaling and ignores everything else above.</span></label>
           </div>
 
+          <div class="check">
+            <input type="checkbox" id="cfgLivePush" onchange="markDirty()">
+            <label for="cfgLivePush"><strong>Instant printing (live connection)</strong><span>Prints start within a second of payment instead of waiting for the next check. If the connection drops, the agent automatically goes back to checking every few seconds. <b id="pushState"></b></span></label>
+          </div>
+
           <div class="preview">
             <div class="preview-head">What will be sent to the printer <button class="link" type="button" onclick="refreshPreview()">refresh</button></div>
             <div class="mono" id="prevBw">—</div>

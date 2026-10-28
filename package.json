@@ -1,7 +1,7 @@
 {
   "name": "docufast-agent",
-  "version": "1.0.16",
-  "description": "DocuFast India \u2014 Print Agent Desktop App",
+  "version": "1.1.0",
+  "description": "DocuFast India — Print Agent Desktop App",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
@@ -12,7 +12,7 @@
   "build": {
     "appId": "in.docufast.agent",
     "productName": "DocuFast Agent",
-    "copyright": "Copyright \u00a9 2026 DocuFast India",
+    "copyright": "Copyright © 2026 DocuFast India",
     "win": {
       "target": [
         {
@@ -59,10 +59,12 @@
     }
   },
   "dependencies": {
+    "@supabase/realtime-js": "2.11.15",
     "auto-launch": "^5.0.6",
     "electron-store": "^8.1.0",
+    "electron-updater": "^6.8.9",
     "node-fetch": "^3.3.2",
-    "electron-updater": "^6.8.9"
+    "ws": "^8.22.0"
   },
   "devDependencies": {
     "electron": "^31.0.0",
