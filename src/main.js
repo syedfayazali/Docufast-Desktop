@@ -142,6 +142,7 @@ const stats = {
   duplicateMessage: '',
   paused: false,
   push: 'off',            // off | connecting | connected | down
+  pushReason: '',         // why live push is down (from socket probe)
 };
 
 // ---- App lifecycle ----
@@ -276,6 +277,7 @@ function updateTrayMenu() {
     { label: 'Open dashboard', click: () => openDashboard() },
     { label: 'Settings', click: () => openDashboard('setup') },
     { label: 'Safe print mode (use if a printer prints a small block)', type: 'checkbox', checked: !!store.get('safePrint'), click: (mi) => { store.set('safePrint', mi.checked); } },
+    ...(stats.push === 'down' && stats.pushReason ? [{ label: `Reason: ${stats.pushReason.slice(0, 80)}`, enabled: false }] : []),
     { label: `Live connection: ${stats.push === 'connected' ? 'on (instant printing)' : stats.push === 'off' ? 'off' : stats.push === 'connecting' ? 'connecting…' : 'down, checking every ' + Math.round(store.get('pollMs') / 1000) + 's'}`, enabled: false },
     { label: 'Open print log folder', click: () => { fs.mkdirSync(getLogDir(), { recursive: true }); shell.openPath(getLogDir()); } },
     { type: 'separator' },
@@ -578,6 +580,7 @@ function startPushConnection() {
       url: SUPABASE_URL,
       anonKey: SUPABASE_ANON_KEY,
       log: logPrint,
+      onReason: r => { stats.pushReason = r; updateTrayMenu(); },
       onWake: () => {
         logPrint('push: wake-up received');
         if (isPolling) wakePending = true; else pollOnce();
@@ -717,6 +720,7 @@ async function heartbeat() {
         'x-machine-id': machineId,
         'x-machine-name': os.hostname(),
         'x-push-state': String(stats.push || 'off'),
+        'x-push-reason': String(stats.pushReason || '').replace(/[^\x20-\x7E]/g, '').slice(0, 200),
         'x-agent-version': app.getVersion(),
       },
       body: JSON.stringify(body),
