@@ -586,6 +586,7 @@ function startPushConnection() {
         stats.push = s;
         applyPollInterval();
         if (s === 'connected') pollOnce(); // catch anything missed while disconnected
+        heartbeat(); // tell the server the live-push state changed
         updateTrayMenu();
         broadcastStats();
       },
@@ -715,6 +716,8 @@ async function heartbeat() {
         'x-agent-key': agentKey,
         'x-machine-id': machineId,
         'x-machine-name': os.hostname(),
+        'x-push-state': String(stats.push || 'off'),
+        'x-agent-version': app.getVersion(),
       },
       body: JSON.stringify(body),
     });
