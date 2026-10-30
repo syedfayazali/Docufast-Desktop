@@ -26,7 +26,7 @@ const CLOUD_URL = 'https://docufast-nu.vercel.app';
 // database policies; all real data still goes through the authenticated API.
 const SUPABASE_URL = 'https://chqennbbwkyhmemfubtj.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNocWVubmJid2t5aG1lbWZ1YnRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMxNjY3NDAsImV4cCI6MjEwODc0Mjc0MH0.SDpg_abhMEO4lNmeOUguSFteEt3kecDu-7SxdfwbKSU';
-const PUSH_FALLBACK_POLL_MS = 120000; // safety poll while the live connection is healthy
+const PUSH_FALLBACK_POLL_MS = 300000; // safety poll while the live connection is healthy
 
 const Store = require('electron-store');
 const store = new Store({
@@ -616,7 +616,7 @@ function startAgent() {
   // work (see handleJob below) and only fall back to a periodic call here
   // to keep "online" status from going stale during long idle stretches.
   heartbeatTimer = setInterval(heartbeat, 180000);     // idle fallback: every 3 min
-  shopDataTimer = setInterval(fetchShopData, 180000);  // idle fallback: every 3 min
+  shopDataTimer = setInterval(fetchShopData, 600000);  // idle fallback: every 10 min
 }
 
 function restartAgent() {
