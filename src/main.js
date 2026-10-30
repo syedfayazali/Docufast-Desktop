@@ -1026,7 +1026,7 @@ async function handleJob(job, cloudUrl, agentKey) {
     if (isImageExt(ext) && store.get('imageEngine') !== 'sumatra' && !/^\.tiff?$/i.test(ext)) {
       await printImageWindows(printablePath, job.copies, job.colorMode, job.duplex);
     } else {
-      await printFile(printablePath, job.copies, job.colorMode, job.duplex);
+      await printFile(printablePath, job.copies, job.colorMode, job.duplex, job.exactSize);
     }
     rememberPrinted(job.code);
 
@@ -1164,12 +1164,14 @@ function queryPrinterInfo(printerName) {
 //  - Paper size is only forced when the shop picked one; 'auto' leaves the
 //    printer's own default alone.
 //  - Safe mode sends nothing but copies + scaling.
-async function buildPrintSettings({ printerName, copies, colorMode, duplex }) {
+async function buildPrintSettings({ printerName, copies, colorMode, duplex, exact }) {
   const info = await queryPrinterInfo(printerName);
   const parts = [`${Math.max(1, parseInt(copies, 10) || 1)}x`];
   const notes = [];
 
-  parts.push(store.get('scaling') || 'fit');
+  // Exact-size jobs (ID card / passport copy sheets) must print at 100% so the
+  // cards come out at real size, whatever the shop's usual scaling is.
+  parts.push(exact ? 'noscale' : (store.get('scaling') || 'fit'));
 
   if (store.get('safePrint')) {
     notes.push('safe print mode on: only copies + scaling sent');
@@ -1209,13 +1211,13 @@ async function buildPrintSettings({ printerName, copies, colorMode, duplex }) {
   return { settings: parts.join(','), info, notes };
 }
 
-async function printFile(filePath, copies, colorMode, duplex) {
+async function printFile(filePath, copies, colorMode, duplex, exact) {
   const sumatraPath = resolveSumatraPath();
   const printerName = store.get('printerName');
 
   let settings = null;
   if (sumatraPath) {
-    const built = await buildPrintSettings({ printerName, copies, colorMode, duplex });
+    const built = await buildPrintSettings({ printerName, copies, colorMode, duplex, exact });
     settings = built.settings;
     logPrint(
       `PRINT ${path.basename(filePath)} | printer="${printerName || '(Windows default)'}"` +
