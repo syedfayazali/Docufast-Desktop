@@ -14,10 +14,12 @@ async function init() {
   if (logoUrl) $('brandLogoImg').src = logoUrl; else $('brandLogoImg').dispatchEvent(new Event('error'));
 
   await loadSettings();
+  $('needGo').onclick = () => { $('needModal').style.display = 'none'; window.docufast.openSubscribe(); };
+  $('needNo').onclick = () => { $('needModal').style.display = 'none'; };
   applyStats(await window.docufast.getStats());
+  renderSetup(); loadExplorePlans();
   window.docufast.onStatsUpdate(applyStats);
   window.docufast.onNavigate(switchTab);
-  $('acctOut').onclick = async () => { if (confirm('Sign out of DocuFast on this computer? Printing will stop until you sign in again.')) window.docufast.signOut(); };
   paintAccount(await window.docufast.accountInfo());
   if (savedConfig.signedIn) { const kf = $('cfgAgentKey').closest('.field'); if (kf) kf.style.display = 'none'; }
 }
@@ -27,7 +29,12 @@ function switchTab(tab) {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.id === `tab-${tab}`));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   if (tab === 'jobs') renderJobsTab();
-  if (tab === 'shop') { const f = $('shopFrame'); if (!f.src && savedConfig.cloudUrl) f.src = savedConfig.cloudUrl + '/admin.html?app=1'; }
+  if (tab === 'shop') {
+    const ok = hasPlan();
+    $('shopLocked').style.display = ok ? 'none' : 'block'; $('shopFrame').style.display = ok ? 'block' : 'none';
+    const f = $('shopFrame'); if (ok && !f.src && savedConfig.cloudUrl) f.src = savedConfig.cloudUrl + '/admin.html?app=1';
+  }
+  renderSetup();
   if (tab === 'setup' && !dirty) { loadPrinterOptions(val('cfgPrinterName')); refreshPreview(); }
 }
 
@@ -35,6 +42,7 @@ function switchTab(tab) {
 function applyStats(stats) {
   if (stats && stats.account !== undefined) paintAccount(stats.account);
   currentStats = stats;
+  if (typeof renderSetup === 'function' && savedConfig) renderSetup();
   const dot = $('statusDot'), lbl = $('statusLabel');
   if (stats.duplicateKey) { dot.className = 'status-dot disconnected'; lbl.textContent = 'Key in use on another PC'; }
   else if (stats.paused) { dot.className = 'status-dot paused'; lbl.textContent = 'Paused'; }
@@ -69,6 +77,7 @@ function applyStats(stats) {
 }
 
 async function togglePause() {
+  if (need('Pausing and resuming printing needs your shop to be set up first.')) return;
   await window.docufast.setPaused(!currentStats.paused);
 }
 
@@ -180,7 +189,10 @@ async function showPrinterInfo() {
     (i.papers?.length ? `<br>Paper sizes: ${esc(i.papers.slice(0, 8).join(', '))}${i.papers.length > 8 ? '…' : ''}` : '');
 }
 
-function onPrinterChange() { markDirty(); showPrinterInfo(); }
+function onPrinterChange() {
+  if (need('To choose the printer for your shop, start your free trial first. It takes about a minute.')) { loadPrinterOptions(savedConfig.printerName || ''); return; }
+  markDirty(); showPrinterInfo();
+}
 
 function markDirty() { setDirty(true); refreshPreview(); }
 function setDirty(d) {
@@ -204,6 +216,7 @@ function refreshPreview() {
 }
 
 async function saveSettings() {
+  if (need('To save settings and start printing, start your free trial first.')) return;
   const c = readForm();
   if (!c.agentKey) { alert('The shop key cannot be empty.'); return; }
   await window.docufast.saveConfig(c);
@@ -225,6 +238,7 @@ async function detectSumatra() {
 }
 
 async function runTestPrint() {
+  if (need('To print a test page on your shop printer, start your free trial first.')) return;
   if (dirty && !confirm('You have unsaved changes. The test page uses your SAVED settings. Print anyway?')) return;
   const b = $('testPrintBtn'), m = $('testMsg');
   b.disabled = true; m.className = 'inline-msg'; m.textContent = 'Sending…';
@@ -270,8 +284,15 @@ init();
 
 /* ---- Account footer + plan banner ---- */
 function paintAccount(acc) {
-  if (!acc) { $('acct').style.display = 'none'; return; }
   $('acct').style.display = 'block';
+  if (!acc || !acc.shop) {
+    $('acctMail').textContent = acc ? acc.email : 'Not signed in';
+    $('acctPlan').textContent = 'Exploring · no plan yet';
+    $('acctOut').textContent = 'Start free trial'; $('acctOut').onclick = () => window.docufast.openSubscribe();
+    return;
+  }
+  $('acctOut').textContent = 'Sign out';
+  $('acctOut').onclick = () => { if (confirm('Sign out of DocuFast on this computer? Printing will stop until you sign in again.')) window.docufast.signOut(); };
   $('acctMail').textContent = acc.email;
   const b = acc.shop && acc.shop.billing, plan = acc.shop && acc.shop.planName;
   let t = '';
@@ -287,4 +308,45 @@ function paintAccount(acc) {
     bar.innerHTML = '<span>' + (b.state === 'trial' ? 'Your free trial ends soon. Your plan will start automatically.' : b.state === 'grace' ? 'Your plan has ended. Renew to keep taking orders.' : 'Your plan has expired. New orders are paused until you renew.') + '</span><button type="button" id="planGo">Orders &amp; plan</button>';
     $('planGo').onclick = () => switchTab('shop');
   }
+}
+
+/* ---- Explore mode, guided setup, subscribe prompts ---- */
+const hasPlan = () => !!savedConfig.agentKey;   // a shop exists (new account with a plan, or an older install)
+
+// Returns true (and asks them to start the trial) when they try something that needs a shop.
+function need(text) {
+  if (hasPlan()) return false;
+  $('needText').textContent = text || 'To set up printing for your shop, start your free trial. You pay nothing for 7 days and can cancel any time.';
+  $('needModal').style.display = 'grid';
+  return true;
+}
+
+function renderSetup() {
+  const plan = hasPlan(), c = savedConfig || {}, s = currentStats || {};
+  const printed = (s.recentJobs || []).length > 0 || s.jobsToday > 0;
+  const steps = [
+    { t: 'Start your free trial', d: plan ? 'Your shop is created.' : 'Sign in with your email and approve AutoPay. Nothing is charged for 7 days.', done: plan, label: 'Start free trial', go: () => window.docufast.openSubscribe() },
+    { t: 'Choose your printer', d: 'Pick the printer your customers\' orders should print on.', done: plan && !!c.printerName, label: 'Choose printer', go: () => { switchTab('setup'); need('To choose the printer for your shop, start your free trial first. It takes about a minute.'); } },
+    { t: 'Print a test page', d: 'Check that paper size and scaling come out right.', done: !!c.testPrinted && plan, label: 'Print test', go: () => { switchTab('setup'); need('To print a test page on your shop printer, start your free trial first.'); } },
+    { t: 'Put your QR poster on the counter', d: 'Customers scan it, upload and pay from their phone.', done: !!c.posterOpened && plan, label: 'Open poster', go: () => { if (need('Your shop\'s QR poster is created when you start your free trial.')) return; window.docufast.markStep('poster'); window.docufast.openUrl((savedConfig.cloudUrl || '') + '/signage.html?shop=' + encodeURIComponent(s.shopSlug || '')); setTimeout(async () => { savedConfig = await window.docufast.getConfig(); renderSetup(); }, 500); } },
+    { t: 'Receive your first order', d: 'It prints automatically as soon as the customer pays.', done: plan && printed, label: '', go: null },
+  ];
+  const done = steps.filter(x => x.done).length;
+  const card = $('setupCard');
+  card.style.display = done === steps.length ? 'none' : 'block';
+  $('exploreCard').style.display = plan ? 'none' : 'block';
+  $('setupTitle').textContent = plan ? 'Finish setting up your shop' : 'Welcome to DocuFast';
+  $('setupSub').textContent = plan ? 'A few quick steps and you are ready for customers.' : 'Look around first. We will ask you to start the free trial when you set something up.';
+  $('setupProg').textContent = done + ' of ' + steps.length + ' done';
+  $('setupBarFill').style.width = Math.round(done / steps.length * 100) + '%';
+  const firstTodo = steps.findIndex(x => !x.done);
+  $('setupSteps').innerHTML = steps.map((x, i) => `<li class="${x.done ? 'done' : ''}"><span class="n">${x.done ? '✓' : i + 1}</span><div class="t"><b>${esc(x.t)}</b><span>${esc(x.d)}</span></div>${!x.done && x.label ? `<button class="btn ${i === firstTodo ? 'primary' : ''} sm" data-i="${i}">${esc(x.label)}</button>` : ''}</li>`).join('');
+  $('setupSteps').querySelectorAll('button').forEach(b => { b.onclick = () => steps[+b.dataset.i].go(); });
+}
+
+async function loadExplorePlans() {
+  const d = await window.docufast.getPlans();
+  if (!d || !d.plans) return;
+  $('explorePlans').innerHTML = d.plans.map(p => `<div class="plan-tile"><b>${esc(p.name)}</b><div class="p">₹${p.price.toLocaleString('en-IN')}<small> / month</small></div><ul>${(p.features || []).slice(0, 4).map(f => '<li>' + esc(f) + '</li>').join('')}</ul></div>`).join('') +
+    `<div style="grid-column:1/-1;text-align:center;margin-top:4px;"><button class="btn primary" type="button" onclick="window.docufast.openSubscribe()">Start free ${d.trialDays || 7}-day trial</button><div class="hint" style="margin-top:6px;">Nothing is charged for ${d.trialDays || 7} days. Cancel any time.</div></div>`;
 }

@@ -62,6 +62,9 @@ const store = new Store({
     machineId:   { type: 'string', default: '' },
     session:     { type: 'string', default: '' },       // signed-in session token (bound to this computer)
     accountEmail:{ type: 'string', default: '' },
+    testPrinted: { type: 'boolean', default: false },
+    posterOpened:{ type: 'boolean', default: false },
+    trayNoticeShown: { type: 'boolean', default: false },
   },
 });
 
@@ -149,7 +152,12 @@ const stats = {
 
 // ---- App lifecycle ----
 stats.paused = store.get('paused');
-app.setLoginItemSettings({ openAtLogin: store.get('autoLaunch') });
+// Launched by Windows at login: stay quietly in the tray. Launched by the user: open the app window.
+const launchedHidden = process.argv.includes('--hidden');
+const loginItem = () => app.setLoginItemSettings({ openAtLogin: store.get('autoLaunch'), args: ['--hidden'] });
+loginItem();
+if (!app.requestSingleInstanceLock()) { app.quit(); }
+app.on('second-instance', () => { if (authWindow && !authWindow.isDestroyed()) { authWindow.show(); authWindow.focus(); } else openDashboard(); });
 app.whenReady().then(init);
 app.on('window-all-closed', e => e.preventDefault()); // stay alive even if window closed
 
@@ -273,16 +281,15 @@ async function bootAccount() {
     try { r = await cloudFetch('/api/app/me'); } catch { /* offline */ }
     if (r && r.status === 200) {
       applyAccount(r.data);
-      if (r.data.shop) { startAgent(); openDashboard(); return; }
-      openAuthWindow('register'); return;
+      if (r.data.shop) { startAgent(); if (!launchedHidden) openDashboard(); return; }
+      openDashboard(); return;            // signed in, no shop yet: let them explore; subscribing is asked when they set up
     }
-    if (r && r.status === 401) { store.set('session', ''); openAuthWindow(); return; }
-    if (store.get('agentKey')) { startAgent(); return; }      // offline: keep printing with what we have
-    openAuthWindow(); return;
+    if (r && r.status === 401) store.set('session', '');
+    else if (store.get('agentKey')) { startAgent(); if (!launchedHidden) openDashboard(); return; }      // offline: keep printing with what we have
   }
   // Shops installed before sign-in existed keep printing with their key.
-  if (store.get('setupDone') && store.get('agentKey')) { startAgent(); return; }
-  openAuthWindow();
+  if (store.get('setupDone') && store.get('agentKey')) { startAgent(); if (!launchedHidden) openDashboard(); return; }
+  openDashboard();     // brand-new install: open the app itself and show the setup steps
 }
 
 async function signOutLocal() {
@@ -291,19 +298,19 @@ async function signOutLocal() {
   stats.account = null; stats.connected = false; stats.shopName = null;
   if (agentRunning) { clearInterval(pollTimer); clearInterval(heartbeatTimer); clearInterval(shopDataTimer); agentRunning = false; try { if (pushHandle) pushHandle.stop(); } catch {} pushHandle = null; stats.push = 'off'; }
   if (dashboardWindow && !dashboardWindow.isDestroyed()) { dashboardWindow.removeAllListeners('close'); dashboardWindow.destroy(); dashboardWindow = null; }
-  updateTrayMenu(); openAuthWindow();
+  updateTrayMenu(); openDashboard();
 }
 
-function openAuthWindow(step) {
+function openAuthWindow(step, parent) {
   if (authWindow && !authWindow.isDestroyed()) { authWindow.show(); authWindow.focus(); return; }
   authWindow = new BrowserWindow({
     width: 940, height: 660, resizable: false, maximizable: false, title: 'DocuFast India', icon: assetPath('icon.ico'),
-    backgroundColor: '#0A2E6E', autoHideMenuBar: true,
+    backgroundColor: '#0A2E6E', autoHideMenuBar: true, parent: parent || undefined, modal: !!parent,
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: false },
   });
   authWindow.setMenuBarVisibility(false);
   authWindow.loadFile(path.join(__dirname, '..', 'dashboard', 'auth.html'), { query: { step: step || 'signin' } });
-  authWindow.on('closed', () => { authWindow = null; if (!agentRunning && !store.get('agentKey')) app.quit(); });
+  authWindow.on('closed', () => { authWindow = null; });
 }
 
 ipcMain.handle('acct-request-code', async (_, email) => {
@@ -351,11 +358,15 @@ ipcMain.handle('acct-subscribe', async (_, form) => {
 });
 ipcMain.handle('acct-finish', async () => {
   const me = await cloudFetch('/api/app/me');
-  if (me.status !== 200 || !me.data.shop) return { ok: false };
-  applyAccount(me.data); startAgent();
+  if (me.status !== 200) return { ok: false };
+  applyAccount(me.data); if (me.data.shop) startAgent();
   const w = authWindow; authWindow = null; if (w && !w.isDestroyed()) { w.removeAllListeners('closed'); w.close(); }
-  openDashboard(); return { ok: true };
+  openDashboard();
+  if (dashboardWindow && !dashboardWindow.isDestroyed()) dashboardWindow.webContents.reload();   // pick up the new account state
+  return { ok: true, hasShop: !!me.data.shop };
 });
+ipcMain.handle('acct-open-subscribe', () => { openAuthWindow(store.get('session') ? 'register' : 'signin', dashboardWindow && !dashboardWindow.isDestroyed() ? dashboardWindow : undefined); });
+ipcMain.handle('mark-step', (_, name) => { if (name === 'poster') store.set('posterOpened', true); });
 ipcMain.handle('acct-logout', () => signOutLocal());
 
 // ---- System Tray ----
@@ -450,6 +461,10 @@ function openDashboard(tab = 'dashboard') {
   dashboardWindow.on('close', e => {
     e.preventDefault();
     dashboardWindow.hide(); // hide instead of close — agent keeps running
+    if (!store.get('trayNoticeShown') && store.get('agentKey')) {
+      store.set('trayNoticeShown', true);
+      new Notification({ title: 'DocuFast is still running', body: 'It keeps printing in the background. Open it again from the system tray (bottom-right) or the desktop shortcut.', icon: assetPath('icon.ico') }).show();
+    }
   });
 
   if (isDev) dashboardWindow.webContents.openDevTools();
@@ -482,7 +497,7 @@ ipcMain.handle('save-config', (_, config) => {
     else if (k === 'printTimeoutSec') store.set(k, Math.max(20, Math.min(600, Math.round(v))));
     else store.set(k, v);
   }
-  app.setLoginItemSettings({ openAtLogin: store.get('autoLaunch') });
+  loginItem();
   printerInfoCache.clear(); // printer may have changed
   if (store.get('agentKey')) {
     store.set('setupDone', true);
@@ -603,7 +618,9 @@ ipcMain.handle('test-print', async () => {
       'the small square below should measure 25.4 mm (1 inch) each side,',
       'and the diagonals should reach all four corners.',
     ]));
+    if (!store.get('agentKey')) return { ok: false, error: 'Start your free trial to set up printing.' };
     const settings = await printFile(file, 1, 'bw', false);
+    store.set('testPrinted', true);
     return { ok: true, settings };
   } catch (e) {
     return { ok: false, error: e.message };

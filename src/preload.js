@@ -30,6 +30,8 @@ contextBridge.exposeInMainWorld('docufast', {
   accountInfo: () => ipcRenderer.invoke('acct-info'),
   subscribe: (form) => ipcRenderer.invoke('acct-subscribe', form),
   finishSignIn: () => ipcRenderer.invoke('acct-finish'),
+  openSubscribe: () => ipcRenderer.invoke('acct-open-subscribe'),
+  markStep: (n) => ipcRenderer.invoke('mark-step', n),
   signOut: () => ipcRenderer.invoke('acct-logout'),
 
   // Listen for live stats pushed from the main process

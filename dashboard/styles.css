@@ -144,3 +144,27 @@ input[type=search] { width:200px; }
 .content:has(#tab-shop.active) { padding:0; overflow:hidden; display:flex; flex-direction:column; }
 #tab-shop { max-width:none; }
 #tab-shop.active { flex:1; min-height:0; }
+
+/* ---- guided setup + explore ---- */
+.setup-card { border:2px solid var(--gold); }
+.setup-head { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+.setup-prog { font-weight:700; color:var(--navy); white-space:nowrap; }
+.setup-bar { height:8px; background:var(--rule); border-radius:6px; margin:12px 0 6px; overflow:hidden; }
+.setup-bar i { display:block; height:100%; width:0; background:linear-gradient(90deg,var(--gold),#E0A200); transition:width .4s; }
+.steps { list-style:none; display:grid; gap:8px; margin-top:10px; }
+.steps li { display:flex; align-items:center; gap:12px; padding:11px 12px; border:1px solid var(--rule); border-radius:10px; background:#fff; }
+.steps li.done { background:var(--ok-bg); border-color:transparent; }
+.steps .n { width:26px; height:26px; border-radius:50%; background:var(--navy-tint); color:var(--navy); display:grid; place-items:center; font-weight:700; flex-shrink:0; }
+.steps li.done .n { background:var(--ok); color:#fff; }
+.steps .t { flex:1; } .steps .t b { display:block; } .steps .t span { color:var(--slate); font-size:12px; }
+.feat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:12px 0; }
+.feat { background:var(--navy-tint); border-radius:10px; padding:12px; } .feat b { display:block; color:var(--navy); margin-bottom:3px; } .feat span { font-size:12px; color:var(--slate); }
+.plan-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.plan-tile { border:2px solid var(--rule); border-radius:12px; padding:14px; } .plan-tile b { font:700 16px 'Space Grotesk',sans-serif; color:var(--navy); }
+.plan-tile .p { font:700 22px 'Space Grotesk',sans-serif; margin:4px 0; } .plan-tile small { color:var(--slate); font-weight:500; font-size:12px; }
+.plan-tile ul { list-style:none; font-size:12px; color:var(--slate); display:grid; gap:3px; margin:6px 0 10px; } .plan-tile li::before { content:"✓ "; color:var(--ok); font-weight:700; }
+.locked { text-align:center; max-width:420px; margin:12vh auto 0; padding:0 20px; } .locked p { color:var(--slate); margin:8px 0 18px; }
+.lock-ic { font-size:40px; margin-bottom:6px; }
+.modal { position:fixed; inset:0; background:rgba(7,31,77,.55); display:grid; place-items:center; z-index:50; }
+.modal-box { background:#fff; border-radius:16px; padding:28px; width:420px; text-align:center; box-shadow:0 12px 40px rgba(0,0,0,.3); }
+.modal-box p { color:var(--slate); margin:8px 0 18px; }
