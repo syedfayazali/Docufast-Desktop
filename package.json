@@ -1,6 +1,6 @@
 {
   "name": "docufast-agent",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "DocuFast India — Print Agent Desktop App",
   "main": "src/main.js",
   "scripts": {

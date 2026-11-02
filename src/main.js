@@ -952,7 +952,7 @@ async function postResult(cloudUrl, agentKey, code, body, tries = 4) {
     try {
       const r = await fetch(`${cloudUrl}/api/agent/${code}/result`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-agent-key': agentKey },
+        headers: { 'Content-Type': 'application/json', 'x-agent-key': agentKey, 'x-machine-id': machineId },
         body: JSON.stringify(body),
         timeout: 15000,
       });
