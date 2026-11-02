@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; img-src 'self' file: data:;">
+<title>DocuFast India</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  html,body{overflow:auto}
+  .wrap{display:grid;grid-template-columns:340px 1fr;height:100vh}
+  .hero{background:linear-gradient(160deg,#0A2E6E 0%,#071F4D 100%);color:#fff;padding:40px 34px;display:flex;flex-direction:column;position:relative;overflow:hidden}
+  .hero::after{content:"";position:absolute;right:-90px;bottom:-90px;width:300px;height:300px;border-radius:50%;background:rgba(244,176,0,.12)}
+  .hero img{height:46px;align-self:flex-start;filter:drop-shadow(0 2px 6px rgba(0,0,0,.25))}
+  .hero .fb{font:700 26px 'Space Grotesk',sans-serif;display:none}.hero .fb span{color:var(--gold)}
+  .hero h2{font:700 26px/1.2 'Space Grotesk',sans-serif;margin:46px 0 14px}
+  .hero h2 em{font-style:normal;color:var(--gold)}
+  .hero ul{list-style:none;display:grid;gap:12px;margin-top:8px;font-size:14px;color:rgba(255,255,255,.88)}
+  .hero li{display:flex;gap:10px;align-items:flex-start}.hero li b{color:var(--gold)}
+  .hero .foot{margin-top:auto;font-size:12px;color:rgba(255,255,255,.55);position:relative;z-index:1}
+  .main{padding:30px 44px;overflow:auto;background:#fff;display:flex;flex-direction:column}
+  .step{display:none;max-width:460px;width:100%;margin:auto}.step.on{display:block}
+  h1{font:700 24px 'Space Grotesk',sans-serif;color:var(--navy);margin-bottom:6px}
+  .lead{color:var(--slate);margin-bottom:22px;font-size:14px}
+  label{display:block;font-size:12px;font-weight:600;color:var(--slate);margin:12px 0 5px;letter-spacing:.02em}
+  input[type=text],input[type=email],input[type=tel]{width:100%;padding:12px 14px;border:2px solid var(--rule);border-radius:10px;font-size:15px;background:#fff}
+  input:focus{outline:none;border-color:var(--gold)}
+  .code{font:600 28px 'IBM Plex Mono',monospace;letter-spacing:.5em;text-align:center;padding-left:.5em}
+  .btn{width:100%;padding:14px;background:var(--gold);color:#071F4D;border:0;border-radius:10px;font:700 16px 'Space Grotesk',sans-serif;cursor:pointer;margin-top:18px}
+  .btn:hover{background:#E0A200}.btn:disabled{background:var(--rule);color:#8A91A3;cursor:not-allowed}
+  .btn.ghost{background:transparent;color:var(--navy);border:2px solid var(--rule);margin-top:10px;font-size:14px;padding:11px}
+  .link{background:none;border:0;color:var(--navy);text-decoration:underline;cursor:pointer;font-size:13px;margin-top:12px}
+  .err{color:var(--err);font-size:13px;min-height:20px;margin-top:10px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .seg{display:flex;background:var(--bg);border-radius:10px;padding:3px;margin:6px 0 4px}
+  .seg button{flex:1;border:0;background:transparent;padding:8px;border-radius:8px;font-weight:600;color:var(--slate);cursor:pointer}
+  .seg button.on{background:#fff;color:var(--navy);box-shadow:0 1px 4px rgba(10,46,110,.15)}
+  .plans{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
+  .plan{border:2px solid var(--rule);border-radius:12px;padding:14px;cursor:pointer;position:relative}
+  .plan.on{border-color:var(--gold);background:#FFFBEF}
+  .plan b{font:700 16px 'Space Grotesk',sans-serif;color:var(--navy)}
+  .plan .p{font:700 22px 'Space Grotesk',sans-serif;margin:4px 0}.plan .p small{font-size:12px;color:var(--slate);font-weight:500}
+  .plan ul{list-style:none;font-size:12px;color:var(--slate);display:grid;gap:3px}
+  .plan ul li::before{content:"✓ ";color:var(--ok);font-weight:700}
+  .note{font-size:12px;color:var(--slate);background:var(--navy-tint);border-radius:10px;padding:10px 12px;margin-top:14px}
+  .spin{width:34px;height:34px;border:4px solid var(--rule);border-top-color:var(--gold);border-radius:50%;animation:s 1s linear infinite;margin:26px auto}
+  @keyframes s{to{transform:rotate(360deg)}}
+  .center{text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <aside class="hero">
+    <img id="logo" alt="DocuFast India" onerror="this.style.display='none';document.getElementById('fb').style.display='block'">
+    <div class="fb" id="fb">Docu<span>Fast</span> India</div>
+    <h2>Documents made easy, <em>delivered to your printer.</em></h2>
+    <ul>
+      <li><b>✓</b> Customers scan, upload and pay by UPI</li>
+      <li><b>✓</b> Prints on your shop printer automatically</li>
+      <li><b>✓</b> Orders, prices and plan in one app</li>
+      <li><b>✓</b> 7-day free trial, cancel any time</li>
+    </ul>
+    <div class="foot" id="ver"></div>
+  </aside>
+
+  <main class="main">
+    <!-- 1. email -->
+    <section class="step on" id="s-email">
+      <h1>Sign in or create your account</h1>
+      <div class="lead">Enter your email. We will send you a 6-digit code. No password to remember.</div>
+      <label for="email">Email address</label>
+      <input type="email" id="email" placeholder="you@example.com" autocomplete="email" spellcheck="false">
+      <div class="err" id="e1"></div>
+      <button class="btn" id="b1">Send me a code</button>
+    </section>
+
+    <!-- 2. code -->
+    <section class="step" id="s-code">
+      <h1>Check your email</h1>
+      <div class="lead">We sent a 6-digit code to <b id="sentTo"></b>. It works for 10 minutes.</div>
+      <label for="code">Sign-in code</label>
+      <input type="text" id="code" class="code" maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="••••••">
+      <div class="err" id="e2"></div>
+      <button class="btn" id="b2">Verify and continue</button>
+      <button class="link" id="resend">Send a new code</button> &nbsp; <button class="link" id="changeEmail">Use a different email</button>
+    </section>
+
+    <!-- 3. register + plan -->
+    <section class="step" id="s-reg">
+      <h1>Set up your shop</h1>
+      <div class="lead">Tell us about your shop and pick a plan. Your first <b data-trial>7</b> days are free.</div>
+      <div class="row">
+        <div><label for="shopName">Shop name</label><input type="text" id="shopName" maxlength="80" placeholder="e.g. Sri Sai Xerox"></div>
+        <div><label for="city">City</label><input type="text" id="city" maxlength="60" placeholder="e.g. Hyderabad"></div>
+      </div>
+      <div class="row">
+        <div><label for="ownerName">Your name</label><input type="text" id="ownerName" maxlength="80"></div>
+        <div><label for="phone">Mobile number</label><input type="tel" id="phone" maxlength="14" inputmode="numeric" placeholder="10-digit"></div>
+      </div>
+      <label>Billing</label>
+      <div class="seg" id="term"><button data-t="monthly" class="on">Monthly</button><button data-t="yearly">Yearly (2 months free)</button></div>
+      <div class="plans" id="plans"></div>
+      <div class="err" id="e3"></div>
+      <button class="btn" id="startTrial">Start 7-day free trial</button>
+      <button class="btn ghost" id="payNow">Subscribe now (no trial)</button>
+      <div class="note">Razorpay checks your UPI AutoPay or card with a <b>₹5 charge that is refunded</b>. Your plan is charged only after the trial ends. Cancel before then from the app and pay nothing.</div>
+    </section>
+
+    <!-- 4. waiting -->
+    <section class="step center" id="s-wait">
+      <div class="spin"></div>
+      <h1 id="waitTitle">Setting up your shop…</h1>
+      <div class="lead" id="waitMsg">This takes a few seconds.</div>
+      <div class="err" id="e4"></div>
+      <button class="btn ghost" id="backReg" style="display:none">Back</button>
+    </section>
+  </main>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+let email = '', term = 'monthly', plans = [], planId = 'pro', trialDays = 7;
+
+function show(id) { document.querySelectorAll('.step').forEach(s => s.classList.toggle('on', s.id === id)); const f = document.querySelector('#' + id + ' input'); if (f) setTimeout(() => f.focus(), 50); }
+function busy(btn, on, label) { btn.disabled = on; if (label) btn.textContent = on ? label.busy : label.idle; }
+
+async function init() {
+  const u = await window.docufast.getAssetUrl('logo.png'); if (u) $('logo').src = u; else $('logo').dispatchEvent(new Event('error'));
+  const cfg = await window.docufast.getConfig(); $('ver').textContent = 'DocuFast ' + (cfg.appVersion || '');
+  const step = new URLSearchParams(location.search).get('step');
+  if (step === 'register') { email = cfg.accountEmail; await openRegister(); }
+  else show('s-email');
+}
+
+async function sendCode() {
+  $('e1').textContent = '';
+  const v = $('email').value.trim();
+  if (!/^\S+@\S+\.\S+$/.test(v)) { $('e1').textContent = 'Enter a valid email address.'; return false; }
+  busy($('b1'), true, { busy: 'Sending…', idle: 'Send me a code' });
+  const r = await window.docufast.requestCode(v);
+  busy($('b1'), false, { busy: 'Sending…', idle: 'Send me a code' });
+  if (!r.ok) { $('e1').textContent = r.error || 'Could not send the code.'; return false; }
+  email = v.toLowerCase(); $('sentTo').textContent = email; $('code').value = ''; $('e2').textContent = ''; show('s-code'); return true;
+}
+$('b1').onclick = sendCode;
+$('email').addEventListener('keydown', e => { if (e.key === 'Enter') sendCode(); });
+$('changeEmail').onclick = () => show('s-email');
+$('resend').onclick = async () => { $('e2').textContent = ''; const r = await window.docufast.requestCode(email); $('e2').textContent = r.ok ? 'A new code is on its way.' : (r.error || 'Could not send the code.'); };
+
+let verifying = false;
+async function verify() {
+  if (verifying) return; verifying = true;
+  try { await verify1(); } finally { verifying = false; }
+}
+async function verify1() {
+  $('e2').textContent = '';
+  const c = $('code').value.trim();
+  if (!/^\d{6}$/.test(c)) { $('e2').textContent = 'Enter the 6-digit code.'; return; }
+  busy($('b2'), true, { busy: 'Checking…', idle: 'Verify and continue' });
+  const r = await window.docufast.verifyCode(email, c);
+  busy($('b2'), false, { busy: 'Checking…', idle: 'Verify and continue' });
+  if (!r.ok) { $('e2').textContent = r.error; return; }
+  if (r.hasShop) return finish(); await openRegister();
+}
+$('b2').onclick = verify;
+$('code').addEventListener('keydown', e => { if (e.key === 'Enter') verify(); });
+$('code').addEventListener('input', () => { if (/^\d{6}$/.test($('code').value)) verify(); });
+
+async function finish() {
+  show('s-wait'); $('waitTitle').textContent = 'Signing you in…';
+  const r = await window.docufast.finishSignIn();
+  if (!r.ok) { $('e4').textContent = 'Could not load your shop. Please try again.'; $('backReg').style.display = ''; }
+}
+
+/* ---- register ---- */
+async function openRegister() {
+  const d = await window.docufast.getPlans();
+  if (d && d.plans) { plans = d.plans; trialDays = d.trialDays || 7; document.querySelectorAll('[data-trial]').forEach(e => e.textContent = trialDays); }
+  $('startTrial').textContent = 'Start ' + trialDays + '-day free trial';
+  renderPlans(); show('s-reg');
+}
+function renderPlans() {
+  $('plans').innerHTML = plans.map(p => {
+    const price = term === 'yearly' ? p.yearly : p.price;
+    return `<div class="plan ${p.id === planId ? 'on' : ''}" data-id="${esc(p.id)}"><b>${esc(p.name)}</b><div class="p">₹${price.toLocaleString('en-IN')}<small> / ${term === 'yearly' ? 'year' : 'month'}</small></div><ul>${(p.features || []).slice(0, 4).map(f => '<li>' + esc(f) + '</li>').join('')}</ul></div>`;
+  }).join('');
+}
+$('plans').onclick = e => { const c = e.target.closest('.plan'); if (!c) return; planId = c.dataset.id; renderPlans(); };
+$('term').onclick = e => { const b = e.target.closest('button'); if (!b) return; term = b.dataset.t; document.querySelectorAll('#term button').forEach(x => x.classList.toggle('on', x === b)); renderPlans(); };
+
+async function subscribe(trial) {
+  $('e3').textContent = '';
+  const form = { shopName: $('shopName').value.trim(), city: $('city').value.trim(), ownerName: $('ownerName').value.trim(), phone: $('phone').value.trim(), plan: planId, term, trial };
+  if (form.shopName.length < 2) { $('e3').textContent = 'Enter your shop name.'; return; }
+  if (form.ownerName.length < 2) { $('e3').textContent = 'Enter your name.'; return; }
+  if (!/^(\+?91|0)?[\s-]?[6-9]\d{9}$/.test(form.phone.replace(/\s|-/g, ''))) { $('e3').textContent = 'Enter a valid 10-digit mobile number.'; return; }
+  show('s-wait'); $('waitTitle').textContent = 'Opening secure payment…'; $('waitMsg').textContent = 'Complete the AutoPay approval in the payment window.'; $('e4').textContent = ''; $('backReg').style.display = 'none';
+  const r = await window.docufast.subscribe(form);
+  if (!r.ok) { $('waitTitle').textContent = 'Not completed'; $('waitMsg').textContent = ''; $('e4').textContent = r.error; $('backReg').style.display = ''; document.querySelector('#s-wait .spin').style.display = 'none'; return; }
+  $('waitTitle').textContent = 'Your shop is ready!'; $('waitMsg').textContent = 'Starting DocuFast…';
+  await window.docufast.finishSignIn();
+}
+$('startTrial').onclick = () => subscribe(true);
+$('payNow').onclick = () => subscribe(false);
+$('backReg').onclick = () => { document.querySelector('#s-wait .spin').style.display = ''; show('s-reg'); };
+init();
+</script>
+</body>
+</html>

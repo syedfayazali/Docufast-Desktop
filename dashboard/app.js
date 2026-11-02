@@ -17,6 +17,9 @@ async function init() {
   applyStats(await window.docufast.getStats());
   window.docufast.onStatsUpdate(applyStats);
   window.docufast.onNavigate(switchTab);
+  $('acctOut').onclick = async () => { if (confirm('Sign out of DocuFast on this computer? Printing will stop until you sign in again.')) window.docufast.signOut(); };
+  paintAccount(await window.docufast.accountInfo());
+  if (savedConfig.signedIn) { const kf = $('cfgAgentKey').closest('.field'); if (kf) kf.style.display = 'none'; }
 }
 
 function switchTab(tab) {
@@ -24,11 +27,13 @@ function switchTab(tab) {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.id === `tab-${tab}`));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   if (tab === 'jobs') renderJobsTab();
+  if (tab === 'shop') { const f = $('shopFrame'); if (!f.src && savedConfig.cloudUrl) f.src = savedConfig.cloudUrl + '/admin.html?app=1'; }
   if (tab === 'setup' && !dirty) { loadPrinterOptions(val('cfgPrinterName')); refreshPreview(); }
 }
 
 /* ================= Stats / dashboard ================= */
 function applyStats(stats) {
+  if (stats && stats.account !== undefined) paintAccount(stats.account);
   currentStats = stats;
   const dot = $('statusDot'), lbl = $('statusLabel');
   if (stats.duplicateKey) { dot.className = 'status-dot disconnected'; lbl.textContent = 'Key in use on another PC'; }
@@ -262,3 +267,24 @@ function fmtTime(d) {
 }
 
 init();
+
+/* ---- Account footer + plan banner ---- */
+function paintAccount(acc) {
+  if (!acc) { $('acct').style.display = 'none'; return; }
+  $('acct').style.display = 'block';
+  $('acctMail').textContent = acc.email;
+  const b = acc.shop && acc.shop.billing, plan = acc.shop && acc.shop.planName;
+  let t = '';
+  if (b) t = b.state === 'trial' ? `${plan || ''} trial · ${Math.max(b.daysLeft, 0)} day${b.daysLeft === 1 ? '' : 's'} left`
+    : b.state === 'active' ? `${plan || 'Plan'} · active` : b.state === 'grace' ? 'Plan ended · renew now' : b.state === 'expired' ? 'Plan expired' : '';
+  $('acctPlan').textContent = t;
+  let bar = $('planBar');
+  if (!bar) { bar = document.createElement('div'); bar.id = 'planBar'; bar.className = 'planbar'; document.querySelector('main.content').prepend(bar); }
+  const warn = b && (b.state === 'grace' || b.state === 'expired' || (b.state === 'trial' && b.daysLeft <= 2));
+  bar.style.display = warn ? 'flex' : 'none';
+  if (warn) {
+    bar.className = 'planbar ' + (b.state === 'trial' ? 'warn' : 'err');
+    bar.innerHTML = '<span>' + (b.state === 'trial' ? 'Your free trial ends soon. Your plan will start automatically.' : b.state === 'grace' ? 'Your plan has ended. Renew to keep taking orders.' : 'Your plan has expired. New orders are paused until you renew.') + '</span><button type="button" id="planGo">Orders &amp; plan</button>';
+    $('planGo').onclick = () => switchTab('shop');
+  }
+}

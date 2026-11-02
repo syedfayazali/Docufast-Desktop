@@ -129,3 +129,18 @@ input[type=search] { width:200px; }
   .grid3 { grid-template-columns:1fr 1fr; }
   .kpi-grid { grid-template-columns:repeat(2,1fr); }
 }
+
+/* ---- account + plan banner ---- */
+.acct { padding:0 0 12px; margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,.12); }
+.acct-mail { font-size:12px; font-weight:600; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.acct-plan { font-size:11px; color:var(--gold); margin-top:2px; }
+.acct-out { margin-top:8px; background:transparent; border:1px solid rgba(255,255,255,.3); color:#fff; border-radius:6px; padding:4px 10px; font-size:12px; cursor:pointer; }
+.acct-out:hover { background:rgba(255,255,255,.12); }
+.planbar { display:flex; align-items:center; gap:12px; justify-content:space-between; padding:10px 18px; font-weight:500; }
+.planbar.warn { background:var(--warn-bg); color:var(--warn); }
+.planbar.err { background:var(--err-bg); color:var(--err); }
+.planbar button { border:0; background:var(--navy); color:#fff; border-radius:7px; padding:6px 12px; font-weight:600; cursor:pointer; }
+#tab-shop.active { display:block; height:100%; }
+.content:has(#tab-shop.active) { padding:0; overflow:hidden; display:flex; flex-direction:column; }
+#tab-shop { max-width:none; }
+#tab-shop.active { flex:1; min-height:0; }

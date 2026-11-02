@@ -1,7 +1,7 @@
 {
   "name": "docufast-agent",
-  "version": "1.1.5",
-  "description": "DocuFast India — Print Agent Desktop App",
+  "version": "2.0.0",
+  "description": "DocuFast India \u2014 print shop app for Windows",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
@@ -11,8 +11,8 @@
   },
   "build": {
     "appId": "in.docufast.agent",
-    "productName": "DocuFast Agent",
-    "copyright": "Copyright © 2026 DocuFast India",
+    "productName": "DocuFast",
+    "copyright": "Copyright \u00a9 2026 DocuFast India",
     "win": {
       "target": [
         {
@@ -22,18 +22,24 @@
           ]
         }
       ],
-      "icon": "assets/icon.ico"
+      "icon": "assets/icon.ico",
+      "publisherName": "DocuFast India"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": false,
-      "createDesktopShortcut": false,
+      "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "DocuFast Agent",
+      "shortcutName": "DocuFast",
       "installerIcon": "assets/icon.ico",
       "uninstallerIcon": "assets/icon.ico",
       "runAfterFinish": true,
-      "license": null
+      "license": null,
+      "installerSidebar": "build/installerSidebar.bmp",
+      "uninstallerSidebar": "build/uninstallerSidebar.bmp",
+      "installerHeader": "build/installerHeader.bmp",
+      "deleteAppDataOnUninstall": false,
+      "artifactName": "DocuFast-Setup.exe"
     },
     "extraResources": [
       {
@@ -56,6 +62,9 @@
       "owner": "syedfayazali",
       "repo": "Docufast-Desktop",
       "releaseType": "release"
+    },
+    "directories": {
+      "buildResources": "build"
     }
   },
   "dependencies": {

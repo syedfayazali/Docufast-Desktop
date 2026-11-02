@@ -22,6 +22,16 @@ contextBridge.exposeInMainWorld('docufast', {
   setPaused: (p) => ipcRenderer.invoke('set-paused', p),
   testPrint: () => ipcRenderer.invoke('test-print'),
 
+  // Account (email sign-in, registration, subscription)
+  requestCode: (email) => ipcRenderer.invoke('acct-request-code', email),
+  verifyCode: (email, code) => ipcRenderer.invoke('acct-verify', email, code),
+  getPlans: () => ipcRenderer.invoke('acct-plans'),
+  me: () => ipcRenderer.invoke('acct-me'),
+  accountInfo: () => ipcRenderer.invoke('acct-info'),
+  subscribe: (form) => ipcRenderer.invoke('acct-subscribe', form),
+  finishSignIn: () => ipcRenderer.invoke('acct-finish'),
+  signOut: () => ipcRenderer.invoke('acct-logout'),
+
   // Listen for live stats pushed from the main process
   onStatsUpdate: (cb) => ipcRenderer.on('stats-update', (_, data) => cb(data)),
   onNavigate: (cb) => ipcRenderer.on('navigate', (_, tab) => cb(tab)),

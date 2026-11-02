@@ -2,7 +2,7 @@
 // Main process: manages the system tray, spawns the background print loop,
 // and serves the dashboard window. Runs silently on Windows startup.
 
-const { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, shell, Notification, powerMonitor } = require('electron');
+const { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, shell, Notification, powerMonitor, session } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const fs = require('fs');
@@ -60,6 +60,8 @@ const store = new Store({
     // Cached once and reused for the lifetime of this install — see
     // getMachineId() below. Not something a person ever sets manually.
     machineId:   { type: 'string', default: '' },
+    session:     { type: 'string', default: '' },       // signed-in session token (bound to this computer)
+    accountEmail:{ type: 'string', default: '' },
   },
 });
 
@@ -178,11 +180,9 @@ async function init() {
   });
 
   // Show 1-field setup screen if this is a fresh install (no API key yet)
-  if (!store.get('setupDone') || !store.get('agentKey')) {
-    openSetupWizard();
-  } else {
-    startAgent();
-  }
+  installSessionHeaders();
+  bootAccount().catch(e => { console.error('boot failed:', e.message); openAuthWindow(); });
+  setInterval(() => { if (store.get('session')) refreshAccount().catch(() => {}); }, 30 * 60 * 1000);
 
   setupAutoUpdate();
 }
@@ -204,7 +204,7 @@ function setupAutoUpdate() {
     updateVersion = info.version;
     updateTrayMenu();
     new Notification({
-      title: 'DocuFast Agent — Update ready',
+      title: 'DocuFast — Update ready',
       body: `Version ${info.version} downloaded. It'll install next time the app restarts, or click "Restart & update" in the tray menu now.`,
       icon: assetPath('icon.ico'),
     }).show();
@@ -220,22 +220,143 @@ function setupAutoUpdate() {
   setInterval(() => autoUpdater.checkForUpdates().catch(() => {}), 4 * 60 * 60 * 1000); // every 4h
 }
 
-function openSetupWizard() {
-  const win = new BrowserWindow({
-    width: 560,
-    height: 580,
-    resizable: false,
-    title: 'DocuFast Agent — Setup',
-    icon: assetPath('icon.ico'),
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
-      contextIsolation: true,
-      nodeIntegration: false,
-    },
-    autoHideMenuBar: true,
-  });
-  win.loadFile(path.join(__dirname, '..', 'dashboard', 'setup.html'));
+// ---- Account: sign in with an emailed code, register, subscribe ----
+// The session is tied to this computer. Once signed in, the shop's printer key is fetched
+// automatically; nobody copies keys or PINs by hand.
+let authWindow = null;
+
+async function cloudFetch(pathname, opts = {}) {
+  const fetch = (await import('node-fetch')).default;
+  const headers = { 'Content-Type': 'application/json', 'x-machine-id': machineId, ...(opts.headers || {}) };
+  const t = store.get('session');
+  if (t) headers.Authorization = 'Bearer ' + t;
+  const res = await fetch(CLOUD_URL + pathname, { method: opts.method || 'GET', headers, body: opts.body ? JSON.stringify(opts.body) : undefined, timeout: 20000 });
+  const data = await res.json().catch(() => ({}));
+  return { status: res.status, ok: res.ok, data };
 }
+
+// The embedded shop page (Shop & plan tab) is already signed in: the app adds the session to its requests.
+function installSessionHeaders() {
+  const ses = session.defaultSession, filter = { urls: [CLOUD_URL + '/*'] };
+  ses.webRequest.onBeforeSendHeaders(filter, (d, cb) => {
+    const t = store.get('session');
+    if (t) { d.requestHeaders['Authorization'] = 'Bearer ' + t; d.requestHeaders['x-machine-id'] = machineId; }
+    cb({ requestHeaders: d.requestHeaders });
+  });
+  ses.webRequest.onHeadersReceived(filter, (d, cb) => {
+    const h = { ...d.responseHeaders };
+    for (const k of Object.keys(h)) if (k.toLowerCase() === 'x-frame-options') delete h[k];
+    cb({ responseHeaders: h });
+  });
+}
+
+function applyAccount(me) {
+  stats.account = { email: me.user.email, name: me.user.name || '', shop: me.shop ? { name: me.shop.name, slug: me.shop.slug, planName: me.shop.planName, billing: me.shop.billing, maxPrinters: me.shop.maxPrinters, active: me.shop.active } : null };
+  if (me.shop) {
+    if (store.get('agentKey') !== me.shop.agentKey) { printerId = null; stats.duplicateKey = false; duplicateKeyNotified = false; }
+    store.set('agentKey', me.shop.agentKey); store.set('setupDone', true);
+    stats.shopName = me.shop.name; stats.shopSlug = me.shop.slug;
+  }
+  broadcastStats();
+}
+
+async function refreshAccount() {
+  const r = await cloudFetch('/api/app/me');
+  if (r.status === 200) { applyAccount(r.data); return r; }
+  if (r.status === 401) await signOutLocal();
+  return r;
+}
+
+async function bootAccount() {
+  if (store.get('session')) {
+    let r = null;
+    try { r = await cloudFetch('/api/app/me'); } catch { /* offline */ }
+    if (r && r.status === 200) {
+      applyAccount(r.data);
+      if (r.data.shop) { startAgent(); openDashboard(); return; }
+      openAuthWindow('register'); return;
+    }
+    if (r && r.status === 401) { store.set('session', ''); openAuthWindow(); return; }
+    if (store.get('agentKey')) { startAgent(); return; }      // offline: keep printing with what we have
+    openAuthWindow(); return;
+  }
+  // Shops installed before sign-in existed keep printing with their key.
+  if (store.get('setupDone') && store.get('agentKey')) { startAgent(); return; }
+  openAuthWindow();
+}
+
+async function signOutLocal() {
+  try { await cloudFetch('/api/app/logout', { method: 'POST', body: {} }); } catch {}
+  store.set('session', ''); store.set('accountEmail', ''); store.set('agentKey', ''); store.set('setupDone', false);
+  stats.account = null; stats.connected = false; stats.shopName = null;
+  if (agentRunning) { clearInterval(pollTimer); clearInterval(heartbeatTimer); clearInterval(shopDataTimer); agentRunning = false; try { if (pushHandle) pushHandle.stop(); } catch {} pushHandle = null; stats.push = 'off'; }
+  if (dashboardWindow && !dashboardWindow.isDestroyed()) { dashboardWindow.removeAllListeners('close'); dashboardWindow.destroy(); dashboardWindow = null; }
+  updateTrayMenu(); openAuthWindow();
+}
+
+function openAuthWindow(step) {
+  if (authWindow && !authWindow.isDestroyed()) { authWindow.show(); authWindow.focus(); return; }
+  authWindow = new BrowserWindow({
+    width: 940, height: 660, resizable: false, maximizable: false, title: 'DocuFast India', icon: assetPath('icon.ico'),
+    backgroundColor: '#0A2E6E', autoHideMenuBar: true,
+    webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: false },
+  });
+  authWindow.setMenuBarVisibility(false);
+  authWindow.loadFile(path.join(__dirname, '..', 'dashboard', 'auth.html'), { query: { step: step || 'signin' } });
+  authWindow.on('closed', () => { authWindow = null; if (!agentRunning && !store.get('agentKey')) app.quit(); });
+}
+
+ipcMain.handle('acct-request-code', async (_, email) => {
+  try { const r = await cloudFetch('/api/app/auth/request', { method: 'POST', body: { email } }); return { ok: r.ok, error: r.data.error }; }
+  catch (e) { return { ok: false, error: 'No internet connection. Please check and try again.' }; }
+});
+ipcMain.handle('acct-verify', async (_, email, code) => {
+  try {
+    const r = await cloudFetch('/api/app/auth/verify', { method: 'POST', body: { email, code, machineId, machineName: os.hostname() }, headers: {} });
+    if (!r.ok) return { ok: false, error: r.data.error || 'Could not verify the code.' };
+    store.set('session', r.data.token); store.set('accountEmail', r.data.email);
+    return { ok: true, hasShop: r.data.hasShop, email: r.data.email };
+  } catch { return { ok: false, error: 'No internet connection. Please check and try again.' }; }
+});
+ipcMain.handle('acct-plans', async () => {
+  try { const r = await cloudFetch('/api/software/plans'); return r.data; } catch { return null; }
+});
+ipcMain.handle('acct-me', async () => { try { const r = await cloudFetch('/api/app/me'); if (r.status === 200) applyAccount(r.data); return { status: r.status, ...r.data }; } catch { return { status: 0 }; } });
+ipcMain.handle('acct-info', () => stats.account || null);
+
+// Registers the shop and opens Razorpay in a secure window; resolves when the window closes.
+ipcMain.handle('acct-subscribe', async (_, form) => {
+  let r;
+  try { r = await cloudFetch('/api/app/register', { method: 'POST', body: form }); } catch { return { ok: false, error: 'No internet connection. Please check and try again.' }; }
+  if (!r.ok) return { ok: false, error: r.data.error || 'Could not start the subscription.' };
+  const d = r.data;
+  const q = new URLSearchParams({ key: d.razorpayKeyId, sub: d.subscriptionId, desc: d.description, name: d.prefill.name, email: d.prefill.email, phone: d.prefill.contact });
+  await new Promise(resolve => {
+    const w = new BrowserWindow({
+      width: 520, height: 720, title: 'DocuFast — Subscribe', icon: assetPath('icon.ico'), parent: authWindow || undefined, modal: !!authWindow,
+      autoHideMenuBar: true, backgroundColor: '#0A2E6E', webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true },
+    });
+    w.webContents.setWindowOpenHandler(({ url: u }) => { if (/^https:\/\/(.*\.)?razorpay\.com\//.test(u)) return { action: 'allow' }; return { action: 'deny' }; });
+    let paid = false;
+    w.webContents.on('page-title-updated', (_e, t) => { if (t === 'DF_PAID') { paid = true; setTimeout(() => !w.isDestroyed() && w.close(), 1500); } });
+    w.on('closed', resolve);
+    w.loadURL(`${CLOUD_URL}/app-pay.html?${q}`);
+  });
+  // The shop is created the moment Razorpay confirms; wait for it.
+  for (let i = 0; i < 25; i++) {
+    try { const me = await cloudFetch('/api/app/me'); if (me.status === 200 && me.data.shop) { applyAccount(me.data); return { ok: true }; } } catch {}
+    await new Promise(r => setTimeout(r, 2000));
+  }
+  return { ok: false, error: 'We did not see the payment finish. If you were charged, wait a minute and reopen the app, or contact DocuFast support.' };
+});
+ipcMain.handle('acct-finish', async () => {
+  const me = await cloudFetch('/api/app/me');
+  if (me.status !== 200 || !me.data.shop) return { ok: false };
+  applyAccount(me.data); startAgent();
+  const w = authWindow; authWindow = null; if (w && !w.isDestroyed()) { w.removeAllListeners('closed'); w.close(); }
+  openDashboard(); return { ok: true };
+});
+ipcMain.handle('acct-logout', () => signOutLocal());
 
 // ---- System Tray ----
 function createTray() {
@@ -251,7 +372,7 @@ function createTray() {
   }
 
   tray = new Tray(icon.resize({ width: 16, height: 16 }));
-  tray.setToolTip('DocuFast Agent');
+  tray.setToolTip('DocuFast India');
   updateTrayMenu();
   tray.on('double-click', () => openDashboard());
 }
@@ -308,7 +429,7 @@ function openDashboard(tab = 'dashboard') {
     height: 720,
     minWidth: 860,
     minHeight: 560,
-    title: 'DocuFast Agent',
+    title: 'DocuFast',
     icon: assetPath('icon.ico'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -335,7 +456,7 @@ function openDashboard(tab = 'dashboard') {
 }
 
 // ---- IPC handlers (dashboard ↔ main process) ----
-ipcMain.handle('get-config', () => ({ ...store.store, printedCodes: undefined, cloudUrl: CLOUD_URL, appVersion: app.getVersion(), logDir: getLogDir() }));
+ipcMain.handle('get-config', () => ({ ...store.store, session: undefined, signedIn: !!store.get('session'), printedCodes: undefined, cloudUrl: CLOUD_URL, appVersion: app.getVersion(), logDir: getLogDir() }));
 const SETTABLE = {
   agentKey: 'string', sumatraPath: 'string', printerName: 'string', autoLaunch: 'boolean',
   pollMs: 'number', livePush: 'boolean', imageEngine: 'string', paperSize: 'string', safePrint: 'boolean', scaling: 'string',

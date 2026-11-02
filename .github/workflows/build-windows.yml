@@ -1,5 +1,5 @@
 # Builds the Windows installer on GitHub's own Windows machine and publishes
-# it as a GitHub Release: one clean "DocuFast Agent Setup X.X.X.exe" to
+# it as a GitHub Release: one clean "DocuFast-Setup.exe" to
 # download, plus the latest.yml file the in-app auto-updater reads.
 #
 # To ship a new version: bump "version" in package.json, push, then
@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['package.json', 'src/**', 'dashboard/**', 'assets/**', '.github/workflows/build-windows.yml']
+    paths: ['package.json', 'src/**', 'dashboard/**', 'assets/**', 'build/**', '.github/workflows/build-windows.yml']
 
 jobs:
   build:
