@@ -472,7 +472,7 @@ function openDashboard(tab = 'dashboard') {
 }
 
 // ---- IPC handlers (dashboard ↔ main process) ----
-ipcMain.handle('get-config', () => ({ ...store.store, session: undefined, signedIn: !!store.get('session'), printedCodes: undefined, cloudUrl: CLOUD_URL, computerName: os.hostname(), appVersion: app.getVersion(), logDir: getLogDir() }));
+ipcMain.handle('get-config', () => ({ ...store.store, session: undefined, signedIn: !!store.get('session'), printedCodes: undefined, cloudUrl: CLOUD_URL, publicUrl: 'https://print.docufastindia.com', computerName: os.hostname(), appVersion: app.getVersion(), logDir: getLogDir() }));
 const SETTABLE = {
   agentKey: 'string', sumatraPath: 'string', printerName: 'string', autoLaunch: 'boolean',
   pollMs: 'number', livePush: 'boolean', imageEngine: 'string', paperSize: 'string', safePrint: 'boolean', scaling: 'string',

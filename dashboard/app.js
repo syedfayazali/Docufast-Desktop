@@ -218,7 +218,7 @@ function openDrawer(code) {
 function closeDrawer() { $('drawer').style.display = 'none'; $('drawerBg').style.display = 'none'; }
 
 /* ================= Customer link, poster, test print ================= */
-const custUrl = () => (currentStats.shopSlug && savedConfig.cloudUrl) ? savedConfig.cloudUrl + '/?shop=' + encodeURIComponent(currentStats.shopSlug) : '';
+const custUrl = () => (currentStats.shopSlug && (savedConfig.publicUrl || savedConfig.cloudUrl)) ? (savedConfig.publicUrl || savedConfig.cloudUrl) + '/?shop=' + encodeURIComponent(currentStats.shopSlug) : '';
 function copyCustLink(btn) {
   if (need('Your customer link is created when you start your free trial.')) return;
   navigator.clipboard.writeText(custUrl()).then(() => toast('Customer link copied'));
@@ -226,7 +226,7 @@ function copyCustLink(btn) {
 function openPoster() {
   if (need('Your shop\'s QR poster is created when you start your free trial.')) return;
   window.docufast.markStep('poster');
-  window.docufast.openUrl((savedConfig.cloudUrl || '') + '/signage.html?shop=' + encodeURIComponent(currentStats.shopSlug || ''));
+  window.docufast.openUrl((savedConfig.publicUrl || savedConfig.cloudUrl || '') + '/signage.html?shop=' + encodeURIComponent(currentStats.shopSlug || ''));
   setTimeout(async () => { savedConfig = await window.docufast.getConfig(); renderSetup(); }, 500);
 }
 async function runTestPrintHome() {
