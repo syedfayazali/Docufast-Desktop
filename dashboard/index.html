@@ -3,145 +3,200 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; img-src 'self' file: data:; frame-src https://docufast-nu.vercel.app;">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; img-src 'self' file: data:; frame-src https://docufast-nu.vercel.app https://*.docufastindia.com https://docufastindia.com;">
 <title>DocuFast</title>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<div class="shell">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></symbol>
+<symbol id="i-shop" viewBox="0 0 24 24"><path d="M3 9l1.5-5h15L21 9"/><path d="M4 9v11h16V9"/><path d="M3 9a3 3 0 006 0 3 3 0 006 0 3 3 0 006 0"/></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3h0a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5h0a1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8v0a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 114 2c-1 .7-1.5 1.2-1.5 2.2M12 17h.01"/></symbol>
+<symbol id="i-printer" viewBox="0 0 24 24"><path d="M7 8V3h10v5"/><rect x="3" y="8" width="18" height="9" rx="2"/><rect x="7" y="14" width="10" height="7"/></symbol>
+<symbol id="i-rupee" viewBox="0 0 24 24"><path d="M7 5h10M7 9h10M7 5c5 0 7 2 7 4s-2 4-7 4l7 6"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12l4 4 10-10"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 012-2h9"/></symbol>
+<symbol id="i-qr" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v3M14 20h3M20 20h1"/></symbol>
+<symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12M7 11l5 5 5-5M4 21h16"/></symbol>
+<symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 12a8 8 0 01-11.6 7.1L4 20l1-4.6A8 8 0 1121 12z"/></symbol>
+<symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 12a8 8 0 10-2.3 5.6M20 5v5h-5"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+</defs></svg>
+<div class="app">
 
-  <nav class="sidebar">
+  <aside class="side">
     <div class="brand">
-      <img id="brandLogoImg" alt="DocuFast India" class="brand-logo" onerror="this.style.display='none';document.getElementById('brandText').style.display='block'">
-      <div class="brand-text" id="brandText" style="display:none;">Docu<span>Fast</span></div>
-      <div class="brand-shop" id="brandShop"></div>
+      <img id="brandLogoImg" alt="" class="brand-logo" onerror="this.style.display='none'">
+      <div class="brand-text" id="brandText"><div>Docu<span>Fast</span></div><small>INDIA</small></div>
     </div>
+    <div class="shop-chip"><div class="shop-av" id="shopAv">D</div><div class="shop-meta"><b id="brandShop">Your shop</b><span id="brandCity">Not set up yet</span></div></div>
 
-    <div class="nav-items">
-      <button class="nav-btn active" data-tab="dashboard" onclick="switchTab('dashboard')">
-        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard
-      </button>
-      <button class="nav-btn" data-tab="jobs" onclick="switchTab('jobs')">
-        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Print jobs
-        <span class="nav-badge" id="navFailedBadge" style="display:none;">0</span>
-      </button>
-      <button class="nav-btn" data-tab="shop" onclick="switchTab('shop')">
-        <svg viewBox="0 0 24 24"><path d="M3 9l1-5h16l1 5"/><path d="M4 9v11h16V9"/><path d="M9 20v-6h6v6"/></svg>Orders &amp; plan
-      </button>
-      <button class="nav-btn" data-tab="setup" onclick="switchTab('setup')">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>Settings
-      </button>
-    </div>
+    <nav class="nav">
+      <div class="nav-label">Overview</div>
+      <button class="nav-btn" data-tab="dashboard" onclick="switchTab('dashboard')"><svg class="ic"><use href="#i-home"/></svg><span>Home</span></button>
+      <button class="nav-btn" data-tab="jobs" onclick="switchTab('jobs')"><svg class="ic"><use href="#i-list"/></svg><span>Orders</span><span class="nav-badge" id="navFailedBadge" style="display:none;">0</span></button>
+      <button class="nav-btn" data-tab="shop" onclick="switchTab('shop')"><svg class="ic"><use href="#i-shop"/></svg><span>Shop &amp; earnings</span></button>
+      <div class="nav-label">Manage</div>
+      <button class="nav-btn" data-tab="setup" onclick="switchTab('setup')"><svg class="ic"><use href="#i-gear"/></svg><span>Printer &amp; settings</span></button>
+      <button class="nav-btn" data-tab="account" onclick="switchTab('account')"><svg class="ic"><use href="#i-user"/></svg><span>Account &amp; plan</span></button>
+      <button class="nav-btn" data-tab="help" onclick="switchTab('help')"><svg class="ic"><use href="#i-help"/></svg><span>Help &amp; support</span></button>
+    </nav>
 
     <div class="side-foot">
       <div class="acct" id="acct" style="display:none;"><div class="acct-mail" id="acctMail"></div><div class="acct-plan" id="acctPlan"></div><button class="acct-out" id="acctOut" type="button">Sign out</button></div>
-      <div class="status-row"><span class="status-dot" id="statusDot"></span><span id="statusLabel">Connecting…</span></div>
       <div class="ver" id="appVer"></div>
     </div>
-  </nav>
+  </aside>
 
-  <main class="content">
+  <div class="main">
+    <header class="topbar">
+      <div class="ttl"><h1 id="pageTitle">Home</h1><div class="sub" id="pageSub"></div></div>
+      <div class="tools">
+        <span class="conn" id="connPill"><i class="status-dot" id="statusDot"></i><span id="statusLabel">Connecting…</span></span>
+        <button class="btn" id="pauseBtn" onclick="togglePause()"><svg class="ic"><use href="#i-pause"/></svg><span>Pause printing</span></button>
+        <button class="btn gold" id="topCta" type="button" style="display:none;" onclick="window.docufast.openSubscribe()">Start free trial</button>
+      </div>
+    </header>
 
-    <!-- ========== DASHBOARD ========== -->
-    <section class="tab active" id="tab-dashboard">
-      <header class="page-head">
-        <div>
-          <h1>Dashboard</h1>
-          <div class="sub"><span id="shopNameBadge"></span><span id="lastPoll"></span></div>
+    <div class="scroll" id="scroll">
+      <div id="planBarHost"></div>
+
+      <!-- ========== HOME ========== -->
+      <section class="tab active" id="tab-dashboard">
+        <div class="hero" id="hero">
+          <div>
+            <div class="hero-hi" id="heroHi">Welcome</div>
+            <h2 id="heroTitle">Welcome to DocuFast</h2>
+            <p id="heroSub">Customers scan your QR, upload and pay. Orders print on your printer by themselves.</p>
+          </div>
+          <div class="hero-actions" id="heroActions"></div>
         </div>
-        <button class="btn" id="pauseBtn" onclick="togglePause()">Pause printing</button>
-      </header>
 
-      <div class="banner warn" id="pausedBanner" style="display:none;">
-        <strong>Printing is paused.</strong> New paid jobs will wait until you resume.
-        <button class="btn sm" onclick="togglePause()">Resume</button>
-      </div>
-      <div class="banner err" id="failedBanner" style="display:none;">
-        <span><strong id="failedCount">0</strong> job(s) failed to print. Customers have already paid.</span>
-        <button class="btn sm" onclick="switchTab('jobs')">Review &amp; retry</button>
-      </div>
-      <div class="banner err" id="dupBanner" style="display:none;"></div>
-
-      <!-- Guided setup: shown until everything is done -->
-      <div class="card setup-card" id="setupCard" style="display:none;">
-        <div class="setup-head"><div><h2 id="setupTitle">Get started</h2><div class="hint" id="setupSub"></div></div><div class="setup-prog" id="setupProg"></div></div>
-        <div class="setup-bar"><i id="setupBarFill"></i></div>
-        <ol class="steps" id="setupSteps"></ol>
-      </div>
-
-      <!-- Shown before subscribing: what the app does and what it costs -->
-      <div class="card" id="exploreCard" style="display:none;">
-        <h2>What you get with DocuFast</h2>
-        <div class="feat-grid">
-          <div class="feat"><b>Customer QR code</b><span>Customers scan, upload a file and pay by UPI from their phone.</span></div>
-          <div class="feat"><b>Automatic printing</b><span>Paid jobs print on your shop printer by themselves.</span></div>
-          <div class="feat"><b>Live order board</b><span>See every order, retry failures and track money in "Orders &amp; plan".</span></div>
-          <div class="feat"><b>Your own prices</b><span>Set rates for B&amp;W, colour, duplex and photo or ID sheets.</span></div>
-          <div class="feat"><b>Reports &amp; export</b><span>Daily totals and CSV downloads for your accounts.</span></div>
-          <div class="feat"><b>Locked to your shop</b><span>Your account works only on your own computer.</span></div>
+        <div class="banner warn" id="pausedBanner" style="display:none;">
+          <span><strong>Printing is paused.</strong> New paid orders will wait until you resume.</span>
+          <button class="btn sm" onclick="togglePause()">Resume</button>
         </div>
-        <div class="plan-row" id="explorePlans"></div>
-      </div>
-
-      <div class="kpi-grid">
-        <div class="kpi"><div class="kpi-num" id="kpiJobsToday">0</div><div class="kpi-lbl">Printed today</div></div>
-        <div class="kpi"><div class="kpi-num" id="kpiRevenue">₹0</div><div class="kpi-lbl">Revenue today</div></div>
-        <div class="kpi"><div class="kpi-num" id="kpiPending">0</div><div class="kpi-lbl">Waiting to print</div></div>
-        <div class="kpi"><div class="kpi-num sm" id="kpiPrinter">—</div><div class="kpi-lbl">Printer</div></div>
-      </div>
-
-      <h2 class="section-title">Recent jobs</h2>
-      <div class="table-wrap">
-        <table class="jobs-table">
-          <thead><tr><th>Code</th><th>File</th><th>Type</th><th>Uploaded</th><th>Printed</th><th>Status</th></tr></thead>
-          <tbody id="dashJobRows"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- ========== JOBS ========== -->
-    <section class="tab" id="tab-jobs">
-      <header class="page-head">
-        <div><h1>Print jobs</h1><div class="sub">Last 50 jobs for this shop</div></div>
-        <div class="head-tools">
-          <input type="search" id="jobSearch" placeholder="Search code or file…" oninput="renderJobsTab()">
-          <select id="statusFilter" onchange="renderJobsTab()">
-            <option value="">All statuses</option>
-            <option value="printed">Printed</option>
-            <option value="printing">Printing</option>
-            <option value="failed">Failed</option>
-            <option value="paid">Waiting</option>
-          </select>
-          <button class="btn" id="retryAllBtn" onclick="retryAllFailed()" style="display:none;">Retry all failed</button>
+        <div class="banner err" id="failedBanner" style="display:none;">
+          <span><strong id="failedCount">0</strong> order(s) failed to print. Customers have already paid.</span>
+          <button class="btn sm" onclick="switchTab('jobs')">Review &amp; retry</button>
         </div>
-      </header>
-      <div class="table-wrap">
-        <table class="jobs-table">
-          <thead><tr><th>Code</th><th>File</th><th>Pages × copies</th><th>Type</th><th>Started</th><th>Printed</th><th>Status</th><th></th></tr></thead>
-          <tbody id="jobsTabRows"></tbody>
-        </table>
-      </div>
-    </section>
+        <div class="banner err" id="dupBanner" style="display:none;"></div>
 
-    <!-- ========== ORDERS & PLAN (the shop dashboard, signed in automatically) ========== -->
-    <section class="tab" id="tab-shop" style="padding:0;">
-      <div id="shopLocked" class="locked" style="display:none;">
-        <div class="lock-ic">🔒</div>
-        <h2>Your orders and plan live here</h2>
-        <p>See every customer order, your earnings, prices, plan and billing. Start your free trial to unlock it.</p>
-        <button class="btn primary" type="button" onclick="window.docufast.openSubscribe()">Start free 7-day trial</button>
-      </div>
-      <iframe id="shopFrame" title="Orders and plan" style="border:0;width:100%;height:100%;display:block;background:#fff;"></iframe>
-    </section>
+        <div class="card setup-card" id="setupCard" style="display:none;">
+          <div class="setup-head"><div><h2 id="setupTitle">Get started</h2><div class="hint" id="setupSub"></div></div><div class="setup-prog" id="setupProg"></div></div>
+          <div class="setup-bar"><i id="setupBarFill"></i></div>
+          <ol class="steps" id="setupSteps"></ol>
+        </div>
 
-    <!-- ========== SETTINGS ========== -->
-    <section class="tab" id="tab-setup">
-      <header class="page-head">
-        <div><h1>Settings</h1><div class="sub">Everything a shop needs to get clean prints. Changes apply to the next job.</div></div>
-      </header>
+        <div class="card" id="exploreCard" style="display:none;">
+          <h2>What you get with DocuFast</h2>
+          <div class="feat-grid">
+            <div class="feat"><b>Customer QR code</b><span>Customers scan, upload a file and pay by UPI from their phone.</span></div>
+            <div class="feat"><b>Automatic printing</b><span>Paid orders print on your shop printer by themselves.</span></div>
+            <div class="feat"><b>Live order board</b><span>See every order, retry failures and track money in "Shop &amp; earnings".</span></div>
+            <div class="feat"><b>Your own prices</b><span>Set rates for B&amp;W, colour, duplex and photo or ID sheets.</span></div>
+            <div class="feat"><b>Reports &amp; export</b><span>Daily totals and CSV downloads for your accounts.</span></div>
+            <div class="feat"><b>Locked to your shop</b><span>Your account works only on your own computer.</span></div>
+          </div>
+          <div class="plan-row" id="explorePlans"></div>
+        </div>
 
-      <div class="cards">
+        <div class="kpi-grid">
+          <div class="kpi"><div class="kpi-ic navy"><svg class="ic"><use href="#i-printer"/></svg></div><div><div class="kpi-num" id="kpiJobsToday">0</div><div class="kpi-lbl">Printed today</div></div></div>
+          <div class="kpi"><div class="kpi-ic gold"><svg class="ic"><use href="#i-rupee"/></svg></div><div><div class="kpi-num" id="kpiRevenue">₹0</div><div class="kpi-lbl">Collected today</div></div></div>
+          <div class="kpi"><div class="kpi-ic warn"><svg class="ic"><use href="#i-clock"/></svg></div><div><div class="kpi-num" id="kpiPending">0</div><div class="kpi-lbl">Waiting to print</div></div></div>
+          <div class="kpi"><div class="kpi-ic ok"><svg class="ic"><use href="#i-check"/></svg></div><div><div class="kpi-num sm" id="kpiPrinter">—</div><div class="kpi-lbl">Printer status</div></div></div>
+        </div>
 
+        <div class="cols">
+          <div class="card pad0">
+            <div class="card-head"><h2>Recent orders</h2><button class="link-btn" onclick="switchTab('jobs')">View all →</button></div>
+            <div class="table-wrap flat">
+              <table class="jobs-table">
+                <thead><tr><th>Code</th><th>File</th><th>Type</th><th>Uploaded</th><th>Printed</th><th>Status</th></tr></thead>
+                <tbody id="dashJobRows"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="stack">
+            <div class="card">
+              <div class="card-head"><h2>Printer</h2><span class="chip" id="homePrinterChip">—</span></div>
+              <div class="big-line" id="homePrinter">Not chosen yet</div>
+              <div class="hint" id="homePrinterSub">Pick the printer orders should print on.</div>
+              <div class="btn-row" style="margin-top:12px;">
+                <button class="btn sm" onclick="switchTab('setup')">Change printer</button>
+                <button class="btn sm" onclick="runTestPrintHome()">Print test page</button>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-head"><h2>Your plan</h2><span class="chip" id="homePlanChip">—</span></div>
+              <div class="big-line" id="homePlan">No plan yet</div>
+              <div class="meter"><i id="homePlanBar"></i></div>
+              <div class="hint" id="homePlanSub">Start your free trial to begin.</div>
+              <div class="btn-row" style="margin-top:12px;"><button class="btn sm" id="homePlanBtn" onclick="switchTab('account')">Manage plan</button></div>
+            </div>
+            <div class="card">
+              <div class="card-head"><h2>Customer link</h2></div>
+              <div class="linkbox"><input type="text" id="custLink" readonly value="Available after you start your trial"><button class="btn sm" onclick="copyCustLink(this)"><svg class="ic"><use href="#i-copy"/></svg><span>Copy</span></button></div>
+              <div class="hint">Put this link or the QR poster on your counter.</div>
+              <div class="btn-row" style="margin-top:10px;"><button class="btn sm" onclick="openPoster()"><svg class="ic"><use href="#i-qr"/></svg><span>Open QR poster</span></button></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== ORDERS ========== -->
+      <section class="tab" id="tab-jobs">
+        <div class="tool-row">
+          <div class="chips" id="jobChips"></div>
+          <div class="head-tools">
+            <input type="search" id="jobSearch" placeholder="Search code or file…" oninput="renderJobsTab()">
+            <input type="hidden" id="statusFilter" value="">
+            <button class="btn" id="retryAllBtn" onclick="retryAllFailed()" style="display:none;">Retry all failed</button>
+            <button class="btn" onclick="exportJobs()"><svg class="ic"><use href="#i-download"/></svg><span>Export CSV</span></button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="jobs-table clickable">
+            <thead><tr><th>Code</th><th>File</th><th>Pages × copies</th><th>Type</th><th>Started</th><th>Printed</th><th>Status</th><th></th></tr></thead>
+            <tbody id="jobsTabRows"></tbody>
+          </table>
+        </div>
+        <div class="hint" style="margin-top:8px;">Showing this computer's last 50 orders. Full history and reports are in Shop &amp; earnings.</div>
+      </section>
+
+      <!-- ========== SHOP & EARNINGS (signed in automatically) ========== -->
+      <section class="tab" id="tab-shop">
+        <div id="shopLocked" class="locked" style="display:none;">
+          <div class="lock-ic"><svg class="ic"><use href="#i-lock"/></svg></div>
+          <h2>Your orders, earnings and plan live here</h2>
+          <p>See every customer order, your earnings, prices, plan and billing. Start your free trial to unlock it.</p>
+          <button class="btn primary" type="button" onclick="window.docufast.openSubscribe()">Start free 7-day trial</button>
+        </div>
+        <div id="shopWrap" class="shop-wrap" style="display:none;">
+          <div class="shop-load" id="shopLoad"><div class="spin"></div><div>Loading your shop…</div></div>
+          <iframe id="shopFrame" title="Shop and earnings"></iframe>
+        </div>
+      </section>
+
+      <!-- ========== PRINTER & SETTINGS ========== -->
+      <section class="tab" id="tab-setup">
+        <div class="subtabs" id="subTabs">
+          <button class="on" data-sub="printer">Printer</button>
+          <button data-sub="quality">Print quality</button>
+          <button data-sub="conn">Connection &amp; startup</button>
+          <button data-sub="tools">Engine &amp; diagnostics</button>
+        </div>
+        <div class="cards">
+          <div class="sub-pane on" data-pane="printer">
         <!-- Printer -->
         <div class="card">
           <h2>Printer</h2>
@@ -161,40 +216,11 @@
           <div class="hint">The test page has a near-edge border, corner diagonals and a 1-inch square — it shows scaling or paper-size problems immediately, using your saved settings (save first if you just changed something).</div>
         </div>
 
-        <!-- Connection + agent -->
-        <div class="card">
-          <h2>Shop connection</h2>
-          <div class="field">
-            <label for="cfgAgentKey">Shop key</label>
-            <div class="inline">
-              <input type="password" id="cfgAgentKey" oninput="markDirty()" placeholder="Key from the DocuFast owner dashboard">
-              <button class="btn sm" type="button" onclick="toggleKey()">Show</button>
-            </div>
-          </div>
-          <div class="grid2">
-            <div class="field">
-              <label for="cfgPollMs">Check for new jobs every</label>
-              <div class="inline"><input type="number" id="cfgPollMs" min="3" max="60" oninput="markDirty()"><span class="unit">seconds</span></div>
-              <div class="hint">10 is a good balance. Lower = faster printing, more server usage.</div>
-            </div>
-            <div class="field">
-              <label for="cfgPrintTimeout">Give up on a stuck print after</label>
-              <div class="inline"><input type="number" id="cfgPrintTimeout" min="20" max="600" oninput="markDirty()"><span class="unit">seconds</span></div>
-              <div class="hint">Raise this for very large files.</div>
-            </div>
-          </div>
-          <div class="check">
-            <input type="checkbox" id="cfgAutoLaunch" onchange="markDirty()">
-            <label for="cfgAutoLaunch"><strong>Start with Windows</strong><span>The agent opens in the tray when the PC turns on.</span></label>
-          </div>
-          <div class="check">
-            <input type="checkbox" id="cfgNotifications" onchange="markDirty()">
-            <label for="cfgNotifications"><strong>Desktop notifications</strong><span>Pop-up when a job prints or fails.</span></label>
-          </div>
-        </div>
 
+          </div>
+          <div class="sub-pane" data-pane="quality">
         <!-- Print preferences -->
-        <div class="card wide">
+        <div class="card">
           <h2>Print preferences</h2>
           <div class="grid3">
             <div class="field">
@@ -268,6 +294,44 @@
           </div>
         </div>
 
+
+          </div>
+          <div class="sub-pane" data-pane="conn">
+        <!-- Connection + agent -->
+        <div class="card">
+          <h2>Shop connection</h2>
+          <div class="field">
+            <label for="cfgAgentKey">Shop key</label>
+            <div class="inline">
+              <input type="password" id="cfgAgentKey" oninput="markDirty()" placeholder="Key from the DocuFast owner dashboard">
+              <button class="btn sm" type="button" onclick="toggleKey()">Show</button>
+            </div>
+          </div>
+          <div class="grid2">
+            <div class="field">
+              <label for="cfgPollMs">Check for new jobs every</label>
+              <div class="inline"><input type="number" id="cfgPollMs" min="3" max="60" oninput="markDirty()"><span class="unit">seconds</span></div>
+              <div class="hint">10 is a good balance. Lower = faster printing, more server usage.</div>
+            </div>
+            <div class="field">
+              <label for="cfgPrintTimeout">Give up on a stuck print after</label>
+              <div class="inline"><input type="number" id="cfgPrintTimeout" min="20" max="600" oninput="markDirty()"><span class="unit">seconds</span></div>
+              <div class="hint">Raise this for very large files.</div>
+            </div>
+          </div>
+          <div class="check">
+            <input type="checkbox" id="cfgAutoLaunch" onchange="markDirty()">
+            <label for="cfgAutoLaunch"><strong>Start with Windows</strong><span>The agent opens in the tray when the PC turns on.</span></label>
+          </div>
+          <div class="check">
+            <input type="checkbox" id="cfgNotifications" onchange="markDirty()">
+            <label for="cfgNotifications"><strong>Desktop notifications</strong><span>Pop-up when a job prints or fails.</span></label>
+          </div>
+        </div>
+
+
+          </div>
+          <div class="sub-pane" data-pane="tools">
         <!-- PDF engine -->
         <div class="card">
           <h2>Printing engine</h2>
@@ -289,6 +353,7 @@
           </div>
         </div>
 
+
         <!-- Diagnostics -->
         <div class="card">
           <h2>Diagnostics &amp; updates</h2>
@@ -302,22 +367,90 @@
           <pre class="log" id="logBox" style="display:none;"></pre>
           <div class="hint">If a printer misbehaves, copy the log and send it to DocuFast support along with the printer's brand and model.</div>
         </div>
-      </div>
 
-      <div class="savebar" id="saveBar">
-        <span id="dirtyMsg">All changes saved</span>
-        <div>
-          <button class="btn" type="button" id="discardBtn" onclick="loadSettings()" disabled>Discard</button>
-          <button class="btn primary" type="button" id="saveBtn" onclick="saveSettings()" disabled>Save settings</button>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-  </main>
+      <!-- ========== ACCOUNT & PLAN ========== -->
+      <section class="tab" id="tab-account">
+        <div class="cols2">
+          <div class="card">
+            <div class="card-head"><h2>Account</h2></div>
+            <dl class="dl" id="acctDl"></dl>
+            <div class="btn-row" style="margin-top:14px;"><button class="btn" id="acctSignBtn" onclick="acctAction()">Sign out</button></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h2>Plan &amp; billing</h2><span class="chip" id="acctPlanChip">—</span></div>
+            <div class="big-line" id="acctPlanName">No plan yet</div>
+            <div class="meter"><i id="acctPlanBar"></i></div>
+            <div class="hint" id="acctPlanSub"></div>
+            <div class="btn-row" style="margin-top:14px;">
+              <button class="btn primary" id="acctPlanBtn" onclick="switchTab('shop')">Manage plan &amp; billing</button>
+            </div>
+            <div class="hint">Change plan, pay once, set up or stop AutoPay in Shop &amp; earnings (Plan &amp; settings tab).</div>
+          </div>
+        </div>
+        <div class="card" id="acctPlansCard" style="display:none;">
+          <div class="card-head"><h2>Choose a plan</h2></div>
+          <div class="plan-row" id="acctPlans"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>This computer</h2></div>
+          <dl class="dl" id="pcDl"></dl>
+          <div class="hint">Your account is locked to your shop. Starter works on 1 computer, Pro on up to 5. To move to a new PC, sign in there with the same email; ask DocuFast support if it says the limit is reached.</div>
+        </div>
+      </section>
+
+      <!-- ========== HELP ========== -->
+      <section class="tab" id="tab-help">
+        <div class="cols2">
+          <div class="card">
+            <div class="card-head"><h2>Talk to us</h2></div>
+            <p class="p">Stuck with a printer, a payment or your plan? We reply fastest on WhatsApp.</p>
+            <div class="btn-row"><a class="btn primary" id="helpWa" style="display:none;" href="#" onclick="openWa();return false;"><svg class="ic"><use href="#i-chat"/></svg><span>WhatsApp support</span></a>
+              <button class="btn" onclick="window.docufast.openUrl('https://software.docufastindia.com')">Visit website</button></div>
+            <div class="hint" id="helpWaNote"></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h2>This app</h2></div>
+            <dl class="dl" id="aboutDl"></dl>
+            <div class="btn-row" style="margin-top:12px;"><button class="btn" onclick="checkUpdates()"><svg class="ic"><use href="#i-refresh"/></svg><span>Check for updates</span></button><button class="btn" onclick="switchTab('setup');showSub('tools');loadLog()">View print log</button></div>
+            <span class="inline-msg" id="updMsg2"></span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h2>Quick answers</h2></div>
+          <details class="faq"><summary>Orders are not printing</summary><p>Check the status pill at the top says <b>Connected</b>, printing is not paused, and the right printer is chosen in Printer &amp; settings. Then press <b>Print test page</b>. If the test works but orders don't, open Orders and use Retry.</p></details>
+          <details class="faq"><summary>It prints a small block or garbage</summary><p>Turn on <b>Safe print mode</b> in Printer &amp; settings → Print quality, save, and print a test page again.</p></details>
+          <details class="faq"><summary>The page is cut or too small</summary><p>Set <b>Page scaling</b> to "Fit to page" and <b>Paper size</b> to your printer's paper (usually A4). ID and passport sheets always print at exact size.</p></details>
+          <details class="faq"><summary>It says my key is used on another computer</summary><p>Your plan allows a limited number of computers (Starter 1, Pro 5). Sign out on the other PC, or contact support to reset it.</p></details>
+          <details class="faq"><summary>Where do I see my earnings and change prices?</summary><p>Open <b>Shop &amp; earnings</b>. Orders and reports are on the first tab, prices, your PIN and your plan are under Plan &amp; settings.</p></details>
+          <details class="faq"><summary>How does the free trial work?</summary><p>You approve UPI AutoPay or a card. Razorpay charges ₹5 to verify it and refunds it. Your plan is charged only after the 7-day trial. Cancel before then and you pay nothing.</p></details>
+        </div>
+      </section>
+    </div>
+
+    <div class="savebar" id="saveBar">
+      <span id="dirtyMsg">All changes saved</span>
+      <div>
+        <button class="btn" type="button" id="discardBtn" onclick="loadSettings()" disabled>Discard</button>
+        <button class="btn primary" type="button" id="saveBtn" onclick="saveSettings()" disabled>Save settings</button>
+      </div>
+    </div>
+  </div>
 </div>
+
+<!-- order details -->
+<div class="drawer-bg" id="drawerBg" onclick="closeDrawer()" style="display:none;"></div>
+<aside class="drawer" id="drawer" style="display:none;">
+  <div class="drawer-head"><h2>Order details</h2><button class="icon-btn" onclick="closeDrawer()"><svg class="ic"><use href="#i-x"/></svg></button></div>
+  <div class="drawer-body" id="drawerBody"></div>
+</aside>
+
 <div class="modal" id="needModal" style="display:none;">
   <div class="modal-box">
-    <div class="lock-ic">🚀</div>
+    <div class="lock-ic big"><svg class="ic"><use href="#i-lock"/></svg></div>
     <h2>Start your free 7-day trial</h2>
     <p id="needText">To set up printing for your shop, start your free trial. You pay nothing for 7 days and can cancel any time.</p>
     <div class="btn-row" style="justify-content:center;">
@@ -326,6 +459,7 @@
     </div>
   </div>
 </div>
+<div class="toast" id="toast" style="display:none;"></div>
 <script src="app.js"></script>
 </body>
 </html>

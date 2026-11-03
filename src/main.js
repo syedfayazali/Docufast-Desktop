@@ -436,10 +436,11 @@ function openDashboard(tab = 'dashboard') {
   }
 
   dashboardWindow = new BrowserWindow({
-    width: 1040,
-    height: 720,
-    minWidth: 860,
-    minHeight: 560,
+    width: 1360,
+    height: 860,
+    minWidth: 1000,
+    minHeight: 640,
+    backgroundColor: '#F3F5FA',
     title: 'DocuFast',
     icon: assetPath('icon.ico'),
     webPreferences: {
@@ -471,7 +472,7 @@ function openDashboard(tab = 'dashboard') {
 }
 
 // ---- IPC handlers (dashboard ↔ main process) ----
-ipcMain.handle('get-config', () => ({ ...store.store, session: undefined, signedIn: !!store.get('session'), printedCodes: undefined, cloudUrl: CLOUD_URL, appVersion: app.getVersion(), logDir: getLogDir() }));
+ipcMain.handle('get-config', () => ({ ...store.store, session: undefined, signedIn: !!store.get('session'), printedCodes: undefined, cloudUrl: CLOUD_URL, computerName: os.hostname(), appVersion: app.getVersion(), logDir: getLogDir() }));
 const SETTABLE = {
   agentKey: 'string', sumatraPath: 'string', printerName: 'string', autoLaunch: 'boolean',
   pollMs: 'number', livePush: 'boolean', imageEngine: 'string', paperSize: 'string', safePrint: 'boolean', scaling: 'string',
