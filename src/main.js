@@ -259,7 +259,7 @@ function installSessionHeaders() {
 }
 
 function applyAccount(me) {
-  stats.account = { email: me.user.email, name: me.user.name || '', shop: me.shop ? { name: me.shop.name, slug: me.shop.slug, planName: me.shop.planName, billing: me.shop.billing, maxPrinters: me.shop.maxPrinters, active: me.shop.active } : null };
+  stats.account = { email: me.user.email, name: me.user.name || '', shop: me.shop ? { acctType: me.shop.acctType || null, name: me.shop.name, slug: me.shop.slug, planName: me.shop.planName, billing: me.shop.billing, maxPrinters: me.shop.maxPrinters, active: me.shop.active } : null };
   if (me.shop) {
     if (store.get('agentKey') !== me.shop.agentKey) { printerId = null; stats.duplicateKey = false; duplicateKeyNotified = false; }
     store.set('agentKey', me.shop.agentKey); store.set('setupDone', true);

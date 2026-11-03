@@ -428,7 +428,8 @@ function planTiles(d, withBtn) {
 function renderPlanTiles() { if (plansInfo && plansInfo.plans) { $('explorePlans').innerHTML = planTiles(plansInfo, true); $('acctPlans').innerHTML = planTiles(plansInfo, true); } }
 
 /* ================= Account & plan ================= */
-function billingText(b, planName) {
+function billingText(b, planName, acctType) {
+  if (acctType === 'owner') return { chip: 'Owner', cls: 'ok', name: 'Owner account · all features', pct: 100, sub: 'No subscription needed. This account never expires.' };
   if (!b) return { chip: 'No plan', cls: '', name: 'No plan yet', pct: 0, sub: 'Start your free trial to begin.' };
   const d = Math.max(b.daysLeft || 0, 0), until = b.until ? new Date(b.until).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
   if (b.state === 'trial') return { chip: 'Free trial', cls: 'ok', name: (planName || 'Plan') + ' · free trial', pct: Math.round(d / 7 * 100), sub: d + ' day' + (d === 1 ? '' : 's') + ' left. Your plan starts automatically on ' + until + '. Cancel before then and pay nothing.' };
@@ -438,7 +439,7 @@ function billingText(b, planName) {
   return { chip: 'No plan', cls: '', name: 'No plan yet', pct: 0, sub: 'Start your free trial to begin.' };
 }
 function paintPlanCards() {
-  const acc = currentStats.account, sh = acc && acc.shop, t = billingText(sh && sh.billing, sh && sh.planName);
+  const acc = currentStats.account, sh = acc && acc.shop, t = billingText(sh && sh.billing, sh && sh.planName, sh && sh.acctType);
   const set = (chip, name, bar, sub) => { $(chip).textContent = t.chip; $(chip).className = 'chip ' + t.cls; $(name).textContent = t.name; $(bar).style.width = t.pct + '%'; $(sub).textContent = t.sub; };
   set('homePlanChip', 'homePlan', 'homePlanBar', 'homePlanSub');
   set('acctPlanChip', 'acctPlanName', 'acctPlanBar', 'acctPlanSub');
@@ -487,7 +488,8 @@ function paintAccount(acc) {
   $('acctMail').textContent = acc.email;
   const b = acc.shop.billing, plan = acc.shop.planName;
   let t = '';
-  if (b) t = b.state === 'trial' ? `${plan || ''} trial · ${Math.max(b.daysLeft, 0)} day${b.daysLeft === 1 ? '' : 's'} left`
+  if (acc.shop.acctType === 'owner') t = 'Owner account · no subscription';
+  else if (b) t = b.state === 'trial' ? `${plan || ''} trial · ${Math.max(b.daysLeft, 0)} day${b.daysLeft === 1 ? '' : 's'} left`
     : b.state === 'active' ? `${plan || 'Plan'} · active` : b.state === 'grace' ? 'Plan ended · renew now' : b.state === 'expired' ? 'Plan expired' : '';
   $('acctPlan').textContent = t;
   paintPlanBar(b); paintPlanCards();
@@ -495,7 +497,7 @@ function paintAccount(acc) {
 function paintPlanBar(b) {
   let bar = $('planBar');
   if (!bar) { bar = document.createElement('div'); bar.id = 'planBar'; bar.className = 'planbar'; $('planBarHost').appendChild(bar); }
-  const warn = b && (b.state === 'grace' || b.state === 'expired' || (b.state === 'trial' && b.daysLeft <= 2));
+  const warn = b && !(currentStats.account && currentStats.account.shop && currentStats.account.shop.acctType === 'owner') && (b.state === 'grace' || b.state === 'expired' || (b.state === 'trial' && b.daysLeft <= 2));
   bar.style.display = warn ? 'flex' : 'none';
   if (warn) {
     bar.className = 'planbar ' + (b.state === 'trial' ? 'warn' : 'err');
