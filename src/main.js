@@ -65,6 +65,7 @@ const store = new Store({
     testPrinted: { type: 'boolean', default: false },
     posterOpened:{ type: 'boolean', default: false },
     trayNoticeShown: { type: 'boolean', default: false },
+    lastAutoInstall: { type: 'object', default: {} },  // { version, at } of the last automatic update attempt
   },
 });
 
@@ -211,11 +212,7 @@ function setupAutoUpdate() {
     updateReady = true;
     updateVersion = info.version;
     updateTrayMenu();
-    new Notification({
-      title: 'DocuFast — Update ready',
-      body: `Version ${info.version} downloaded. It'll install next time the app restarts, or click "Restart & update" in the tray menu now.`,
-      icon: assetPath('icon.ico'),
-    }).show();
+    installUpdateWhenIdle(info.version);
   });
 
   autoUpdater.on('error', (err) => {
@@ -224,8 +221,33 @@ function setupAutoUpdate() {
     console.error('Auto-update check failed:', err.message);
   });
 
-  autoUpdater.checkForUpdates().catch(() => {});
-  setInterval(() => autoUpdater.checkForUpdates().catch(() => {}), 4 * 60 * 60 * 1000); // every 4h
+  setTimeout(() => autoUpdater.checkForUpdates().catch(() => {}), 20 * 1000); // shortly after start
+  setInterval(() => autoUpdater.checkForUpdates().catch(() => {}), 60 * 60 * 1000); // then every hour
+}
+
+// As soon as a new version has finished downloading it is installed and the app reopens by
+// itself, with no installer window and no clicks. It never interrupts a print: it waits until
+// the printer loop is idle. If an install ever fails, the same version is not retried for 6 hours
+// so the app can never get stuck restarting in a loop.
+let installWaiting = false;
+function installUpdateWhenIdle(version) {
+  if (installWaiting) return;
+  const last = store.get('lastAutoInstall') || {};
+  if (last.version === version && Date.now() - last.at < 6 * 3600 * 1000) {
+    new Notification({ title: 'DocuFast — Update ready', body: `Version ${version} is downloaded. Use "Restart & update" in the tray menu to finish.`, icon: assetPath('icon.ico') }).show();
+    return;
+  }
+  installWaiting = true;
+  const tryNow = () => {
+    if (isPolling) return setTimeout(tryNow, 10 * 1000); // a print is in progress: wait
+    store.set('lastAutoInstall', { version, at: Date.now() });
+    new Notification({ title: 'DocuFast is updating', body: `Installing version ${version}. DocuFast will reopen in a few seconds.`, icon: assetPath('icon.ico') }).show();
+    setTimeout(() => {
+      try { autoUpdater.quitAndInstall(true, true); } // silent install, then reopen
+      catch (e) { console.error('Auto-install failed:', e.message); installWaiting = false; }
+    }, 3000);
+  };
+  tryNow();
 }
 
 // ---- Account: sign in with an emailed code, register, subscribe ----
@@ -414,7 +436,7 @@ function updateTrayMenu() {
     { label: 'Open print log folder', click: () => { fs.mkdirSync(getLogDir(), { recursive: true }); shell.openPath(getLogDir()); } },
     { type: 'separator' },
     ...(updateReady ? [
-      { label: `⬇ Restart & update to v${updateVersion}`, click: () => autoUpdater.quitAndInstall() },
+      { label: `⬇ Restart & update to v${updateVersion}`, click: () => autoUpdater.quitAndInstall(true, true) },
       { type: 'separator' },
     ] : []),
     { label: 'Quit DocuFast Agent', click: () => { app.quit(); } },
