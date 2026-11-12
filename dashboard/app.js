@@ -131,7 +131,7 @@ function paintHero() {
   } else {
     $('heroTitle').textContent = s.shopName || 'Your shop';
     $('heroSub').textContent = s.paused ? 'Printing is paused. Resume when you are ready for orders.' : s.connected ? 'You are online. New paid orders print automatically.' : 'Connecting to DocuFast…';
-    acts.innerHTML = `<button class="btn" onclick="togglePause()">${s.paused ? 'Resume printing' : 'Pause printing'}</button><button class="btn" onclick="runTestPrintHome()">Print test page</button><button class="btn gold" onclick="openPoster()">Open QR poster</button>`;
+    acts.innerHTML = `<button class="btn" onclick="togglePause()">${s.paused ? 'Resume printing' : 'Pause printing'}</button><button class="btn" onclick="runTestPrintHome()">Print test page</button><button class="btn gold" onclick="openPoster()">Open QR poster</button><button class="btn" onclick="openPoster('counter')">Counter poster 10×20 cm</button>`;
   }
   $('topCta').style.display = plan ? 'none' : '';
 }
@@ -223,10 +223,11 @@ function copyCustLink(btn) {
   if (need('Your customer link is created when you start your free trial.')) return;
   navigator.clipboard.writeText(custUrl()).then(() => toast('Customer link copied'));
 }
-function openPoster() {
+// kind: undefined = the A4 wall poster, 'counter' = the 10 x 20 cm stand card for the counter.
+function openPoster(kind) {
   if (need('Your shop\'s QR poster is created when you start your free trial.')) return;
   window.docufast.markStep('poster');
-  window.docufast.openUrl((savedConfig.publicUrl || savedConfig.cloudUrl || '') + '/signage.html?shop=' + encodeURIComponent(currentStats.shopSlug || ''));
+  window.docufast.openUrl((savedConfig.publicUrl || savedConfig.cloudUrl || '') + (kind === 'counter' ? '/counter.html?shop=' : '/signage.html?shop=') + encodeURIComponent(currentStats.shopSlug || ''));
   setTimeout(async () => { savedConfig = await window.docufast.getConfig(); renderSetup(); }, 500);
 }
 async function runTestPrintHome() {
