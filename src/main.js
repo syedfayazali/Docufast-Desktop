@@ -2,7 +2,7 @@
 // Main process: manages the system tray, spawns the background print loop,
 // and serves the dashboard window. Runs silently on Windows startup.
 
-const { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, shell, Notification, powerMonitor, session } = require('electron');
+const { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, shell, Notification, powerMonitor, powerSaveBlocker, session } = require('electron');
 const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const fs = require('fs');
@@ -166,6 +166,14 @@ async function init() {
   createTray();
   machineId = await getMachineId();
 
+  // The PC must not go to sleep while the shop is open, or customers' prints would wait until
+  // someone wakes it. (The screen may still turn off; only system sleep is blocked.)
+  try { powerSaveBlocker.start('prevent-app-suspension'); } catch (e) { console.error('sleep blocker failed:', e.message); }
+  // Customer files are only ever in the temp folder while printing. Anything left from a crash
+  // or power cut is removed now, and again every few hours.
+  sweepTempFiles(0);
+  setInterval(() => sweepTempFiles(30 * 60 * 1000), 3 * 60 * 60 * 1000);
+
   // After sleep, the poll/heartbeat setIntervals don't fire while the PC is
   // asleep, and Windows doesn't "catch up" missed ticks on wake — the agent
   // would otherwise just sit there until whatever the next naturally-timed
@@ -194,6 +202,17 @@ async function init() {
   setInterval(() => { if (store.get('session')) refreshAccount().catch(() => {}); }, 30 * 60 * 1000);
 
   setupAutoUpdate();
+}
+
+function sweepTempFiles(minAgeMs) {
+  try {
+    const dir = os.tmpdir();
+    for (const f of fs.readdirSync(dir)) {
+      if (!/^docufast-/.test(f)) continue;
+      const full = path.join(dir, f);
+      try { const st = fs.statSync(full); if (st.isFile() && Date.now() - st.mtimeMs >= minAgeMs) fs.unlinkSync(full); } catch { /* in use or gone */ }
+    }
+  } catch { /* temp folder unreadable: nothing to sweep */ }
 }
 
 // Every fix so far has meant physically visiting each shop with a pendrive
@@ -515,6 +534,7 @@ ipcMain.handle('save-config', (_, config) => {
   for (const [k, v] of Object.entries(config || {})) {
     if (!SETTABLE[k] || typeof v !== SETTABLE[k]) continue; // never saves cloudUrl or unknown keys
     if (ALLOWED[k] && !ALLOWED[k].includes(v)) continue;
+    if (k === 'sumatraPath' && v && !/sumatrapdf[^\\/]*\.exe$/i.test(v)) continue; // only the PDF printer program, never another .exe
     if (k === 'pollMs') store.set(k, Math.max(3000, Math.min(60000, v)));
     else if (k === 'trayBin') store.set(k, Math.max(0, Math.min(99, Math.round(v))));
     else if (k === 'printTimeoutSec') store.set(k, Math.max(20, Math.min(600, Math.round(v))));
@@ -532,7 +552,8 @@ ipcMain.handle('save-config', (_, config) => {
   return { ok: true };
 });
 ipcMain.handle('get-stats', () => ({ ...stats }));
-ipcMain.handle('open-url', (_, url) => shell.openExternal(url));
+// Only normal web links: never file:, smb: or program links.
+ipcMain.handle('open-url', (_, link) => (/^https:\/\//i.test(String(link)) ? shell.openExternal(String(link)) : false));
 
 // The dashboard/setup HTML load from inside app.asar, but assets/ only
 // exists at resources/assets/ (see assetPath() above) — a relative
@@ -973,8 +994,9 @@ async function pollOnce() {
     // Paused (paper out, printer being fixed...): stay connected and keep
     // counting pending jobs, but don't start any print until resumed.
     if (!store.get('paused')) {
-      for (const job of data.jobs) {
-        await handleJob(job, CLOUD_URL, agentKey);
+      for (let i = 0; i < data.jobs.length; i++) {
+        prefetchJob(data.jobs[i + 1]); // download the next file while this one prints
+        await handleJob(data.jobs[i], CLOUD_URL, agentKey);
       }
     }
   } catch {
@@ -982,6 +1004,7 @@ async function pollOnce() {
     updateTrayMenu();
   } finally {
     isPolling = false;
+    prefetched.clear();
   }
   broadcastStats();
   // A wake-up arrived while we were busy printing: check again right away.
@@ -1148,6 +1171,40 @@ function notify(title, body) {
   try { new Notification({ title, body, icon: assetPath('icon.ico') }).show(); } catch { /* ignore */ }
 }
 
+// Asks Windows whether the printer can actually print right now. Returns null when it is fine or
+// when Windows cannot tell (never blocks on a guess), otherwise a plain-English problem.
+const PRINTER_ERRORS = { 4: 'out of paper', 6: 'out of toner or ink', 7: 'a door or cover is open', 8: 'a paper jam', 9: 'offline', 11: 'the output tray is full' };
+function printerProblem(printerName) {
+  return new Promise(resolve => {
+    const script = [
+      "$ErrorActionPreference='SilentlyContinue'",
+      "$n=$env:DF_PRINTER",
+      "$p = if ($n) { Get-CimInstance Win32_Printer | Where-Object { $_.Name -eq $n } | Select-Object -First 1 } else { Get-CimInstance Win32_Printer | Where-Object { $_.Default } | Select-Object -First 1 }",
+      "if (-not $p) { '{}' } else { @{ offline = [bool]$p.WorkOffline; status = [int]$p.PrinterStatus; err = [int]$p.DetectedErrorState } | ConvertTo-Json -Compress }",
+    ].join('\n');
+    const encoded = Buffer.from(script, 'utf16le').toString('base64');
+    require('child_process').execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-EncodedCommand', encoded],
+      { windowsHide: true, timeout: 8000, env: { ...process.env, DF_PRINTER: printerName || '' } }, (err, stdout) => {
+        if (err) return resolve(null);
+        try {
+          const r = JSON.parse(String(stdout).trim() || '{}');
+          if (r.offline || r.status === 7) return resolve('offline');
+          if (PRINTER_ERRORS[r.err]) return resolve(PRINTER_ERRORS[r.err]);
+        } catch { /* unreadable: do not block */ }
+        resolve(null);
+      });
+  });
+}
+
+// Fetches a job's file ahead of time while the previous one is still printing.
+const prefetched = new Map();
+function prefetchJob(job) {
+  if (!job || !job.blobUrl || prefetched.has(job.code) || (store.get('printedCodes') || []).includes(job.code)) return;
+  const p = (async () => { const f = (await import('node-fetch')).default; return downloadWithRetry(f, job.blobUrl); })();
+  p.catch(() => {}); // a failure is handled when the job itself starts
+  prefetched.set(job.code, p);
+}
+
 async function handleJob(job, cloudUrl, agentKey) {
   const fetch = (await import('node-fetch')).default;
 
@@ -1186,7 +1243,13 @@ async function handleJob(job, cloudUrl, agentKey) {
 
   let printablePath = null;
   try {
-    const buffer = await downloadWithRetry(fetch, job.blobUrl);
+    // Do not spend the customer's paper or time if the printer cannot print: the job is held and
+    // the server tries it again automatically after the shop has fixed the printer.
+    const problem = await printerProblem(store.get('printerName'));
+    if (problem) throw new Error(`The printer is ${problem}. It will print automatically once that is fixed.`);
+
+    const pre = prefetched.get(job.code); prefetched.delete(job.code);
+    const buffer = pre ? await pre.catch(() => downloadWithRetry(fetch, job.blobUrl)) : await downloadWithRetry(fetch, job.blobUrl);
     fs.writeFileSync(tempPath, buffer);
     logPrint(`JOB ${job.code} "${job.filename}" ${buffer.length} bytes, attempt ${job.attempt || 1}, copies=${job.copies} color=${job.colorMode} duplex=${job.duplex}`);
 
@@ -1197,6 +1260,11 @@ async function handleJob(job, cloudUrl, agentKey) {
       await printFile(printablePath, job.copies, job.colorMode, job.duplex, job.exactSize);
     }
     rememberPrinted(job.code);
+    // The job is now with Windows. If the printer reports a fault shortly after, tell the shop.
+    setTimeout(async () => {
+      const late = await printerProblem(store.get('printerName'));
+      if (late) notify('DocuFast — Check the printer', `${job.filename} was sent, but the printer is ${late}. Please check it.`);
+    }, 20000);
 
     const reported = await postResult(cloudUrl, agentKey, job.code, { success: true });
     if (!reported) logPrint(`  -> printed ${job.code} but could not report it to the server yet; it will be re-reported on the next poll`);
