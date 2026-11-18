@@ -1,6 +1,6 @@
 {
   "name": "docufast-agent",
-  "version": "2.1.4",
+  "version": "2.1.5",
   "description": "DocuFast India \u2014 print shop app for Windows",
   "main": "src/main.js",
   "scripts": {
@@ -22,8 +22,7 @@
           ]
         }
       ],
-      "icon": "assets/icon.ico",
-      "publisherName": "DocuFast India"
+      "icon": "assets/icon.ico"
     },
     "nsis": {
       "oneClick": false,

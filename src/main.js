@@ -798,6 +798,7 @@ async function fetchShopData() {
     const fetch = (await import('node-fetch')).default;
     const res = await fetch(`${CLOUD_URL}/api/admin/jobs`, {
       headers: { 'x-shop-key': agentKey },
+      timeout: 20000,
     });
     if (!res.ok) return; // don't clobber existing data on a transient error
 
@@ -885,6 +886,7 @@ async function heartbeat() {
         'x-agent-version': app.getVersion(),
       },
       body: JSON.stringify(body),
+      timeout: 15000,
     });
     if (res.ok) {
       const data = await res.json();
@@ -929,6 +931,7 @@ function handleDuplicateKey(message) {
   }
 }
 
+let pollStartedAt = 0;
 let isPolling = false; // guards against overlapping poll cycles (see below)
 
 async function pollOnce() {
@@ -938,8 +941,10 @@ async function pollOnce() {
   // printing. The cloud hasn't marked that job "printed" yet at that point,
   // so the second cycle could see it as still pending and print it again —
   // a customer getting two physical copies of something they paid for once.
+  // Watchdog: if a cycle has somehow been "running" for 15 minutes it is stuck; let a new one start.
+  if (isPolling && Date.now() - pollStartedAt > 15 * 60 * 1000) { logPrint('WATCHDOG: poll cycle stuck for 15 min, restarting it'); isPolling = false; }
   if (isPolling) return;
-  isPolling = true;
+  isPolling = true; pollStartedAt = Date.now();
 
   const agentKey = store.get('agentKey');
   if (!agentKey) { isPolling = false; return; }
@@ -949,7 +954,9 @@ async function pollOnce() {
     const headers = { 'x-agent-key': agentKey, 'x-machine-id': machineId };
     if (printerId) headers['x-printer-id'] = printerId;
 
-    const res = await fetch(`${CLOUD_URL}/api/agent/pending`, { headers });
+    // A timeout is essential: on a half-dead wifi/router connection a request with no timeout can
+    // wait forever, which froze this loop (isPolling stayed true) until the app was restarted.
+    const res = await fetch(`${CLOUD_URL}/api/agent/pending`, { headers, timeout: 20000 });
     if (res.status === 409) {
       const data = await res.json().catch(() => ({}));
       handleDuplicateKey(data.message);
