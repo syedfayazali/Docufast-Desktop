@@ -61,9 +61,9 @@
     <header class="topbar">
       <div class="ttl"><h1 id="pageTitle">Home</h1><div class="sub" id="pageSub"></div></div>
       <div class="tools">
-        <span class="conn" id="connPill" title="Connection from this PC to the DocuFast server"><svg class="ic sm"><use href="#i-server"/></svg><i class="status-dot" id="statusDot"></i><span id="statusLabel">Server…</span></span>
-        <span class="conn" id="livePill" title="Live connection: orders start printing within a second of payment"><svg class="ic sm"><use href="#i-bolt"/></svg><i class="status-dot" id="liveDot"></i><span id="liveLabel">Live…</span></span>
-        <span class="conn" id="printerPill" title="Printer status from Windows"><svg class="ic sm"><use href="#i-printer"/></svg><i class="status-dot" id="printerDot"></i><span id="printerLabel">Printer…</span></span>
+        <span class="conn" id="connPill" onclick="reconnect('server')" style="cursor:pointer;" title="Connection from this PC to the DocuFast server"><svg class="ic sm"><use href="#i-server"/></svg><i class="status-dot" id="statusDot"></i><span id="statusLabel">Server…</span><button class="pill-btn" id="srvBtn" type="button" style="display:none;" onclick="reconnect('server',event)">Reconnect</button></span>
+        <span class="conn" id="livePill" onclick="reconnect('live')" style="cursor:pointer;" title="Live connection: orders start printing within a second of payment"><svg class="ic sm"><use href="#i-bolt"/></svg><i class="status-dot" id="liveDot"></i><span id="liveLabel">Live…</span><button class="pill-btn" id="liveBtn" type="button" style="display:none;" onclick="reconnect('live',event)">Reconnect</button></span>
+        <span class="conn" id="printerPill" onclick="reconnect('printer')" style="cursor:pointer;" title="Printer status from Windows"><svg class="ic sm"><use href="#i-printer"/></svg><i class="status-dot" id="printerDot"></i><span id="printerLabel">Printer…</span><button class="pill-btn" id="printerBtn" type="button" style="display:none;" onclick="reconnect('printer',event)">Check again</button></span>
         <button class="btn" id="pauseBtn" onclick="togglePause()"><svg class="ic"><use href="#i-pause"/></svg><span>Pause printing</span></button>
         <button class="btn gold" id="topCta" type="button" style="display:none;" onclick="window.docufast.openSubscribe()">Start free trial</button>
       </div>

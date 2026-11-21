@@ -247,3 +247,6 @@ input[readonly] { background:#F7F9FC; }
 @media (max-width:1250px) { .cols { grid-template-columns:1fr; } .kpi-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .cols2 { grid-template-columns:1fr; } }
 @media (max-width:1000px) { .side { width:200px; } .topbar,.scroll { padding-left:20px; padding-right:20px; } .grid3 { grid-template-columns:1fr 1fr; } .feat-grid { grid-template-columns:1fr 1fr; } }
 @media (min-width:1700px) { html,body { font-size:15px; } .side { width:272px; } .kpi-num { font-size:32px; } }
+
+.pill-btn { border:0; border-radius:12px; padding:3px 10px; font:inherit; font-size:12px; font-weight:600; background:var(--navy,#17306b); color:#fff; cursor:pointer; margin-left:2px; }
+.pill-btn:disabled { opacity:.6; cursor:wait; }

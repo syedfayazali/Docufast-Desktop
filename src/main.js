@@ -645,6 +645,17 @@ ipcMain.handle('get-log-tail', (_, lines = 40) => {
     return t.slice(-Math.max(5, Math.min(200, lines))).join('\n');
   } catch { return '(no print log yet)'; }
 });
+// "Reconnect" / "Check again" buttons in the app: re-test the server link, the live link and the printer now.
+ipcMain.handle('reconnect', async (_, target) => {
+  const all = !target || target === 'all';
+  try {
+    if (all || target === 'live') startPushConnection();
+    if (all || target === 'server') { await Promise.allSettled([heartbeat(), pollOnce(), fetchShopData()]); }
+    if (all || target === 'printer') { setPrinterHealth(await checkPrinter(store.get('printerName'))); }
+  } catch (e) { logPrint(`reconnect(${target}) failed: ${e.message}`); }
+  updateTrayMenu(); broadcastStats();
+  return { ok: true, stats: { connected: stats.connected, push: stats.push, printer: stats.printer } };
+});
 ipcMain.handle('install-update', () => {
   if (!updateReady) return { ok: false, message: 'No downloaded update to install yet.' };
   stats.update = { ...stats.update, state: 'installing' }; broadcastStats();

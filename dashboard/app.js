@@ -91,6 +91,9 @@ function applyStats(stats) {
   $('printerDot').className = 'status-dot ' + (prOk ? 'connected' : prBad ? 'disconnected' : 'paused');
   $('printerLabel').textContent = !plan ? 'Printer: not set up' : stats.paused ? 'Printing paused' : prOk ? 'Printer ready' : prBad ? 'Printer: ' + pr.label : 'Printer: checking…';
   $('printerPill').classList.toggle('bad', plan && prBad);
+  $('srvBtn').style.display = (plan && !stats.connected && !stats.duplicateKey) ? '' : 'none';
+  $('liveBtn').style.display = (plan && stats.push === 'down') ? '' : 'none';
+  $('printerBtn').style.display = (plan && (prBad || pr.state === 'unknown')) ? '' : 'none';
   $('printerPill').title = (pr.detail || 'Printer status from Windows') + (pr.queued ? ` (${pr.queued} in Windows queue)` : '');
 
   $('kpiJobsToday').textContent = stats.jobsToday;
@@ -378,6 +381,21 @@ async function copyLog() {
   catch { await loadLog(); $('updMsg').textContent = 'Select the log text and copy it manually.'; }
 }
 const fmtMB = (b) => (b / 1048576).toFixed(1) + ' MB';
+let reconnecting = false;
+async function reconnect(target, ev) {
+  if (ev) ev.stopPropagation();
+  if (reconnecting) return; reconnecting = true;
+  const btns = ['srvBtn', 'liveBtn', 'printerBtn'].map($);
+  btns.forEach(b => { if (b) { b.disabled = true; b.dataset.t = b.textContent; b.textContent = 'Checking…'; } });
+  try {
+    const r = await window.docufast.reconnect(target);
+    const st = r && r.stats || {};
+    toast(target === 'printer' ? (st.printer && st.printer.state === 'ready' ? 'Printer is ready.' : 'Printer still has a problem: ' + ((st.printer && st.printer.detail) || 'unknown')) :
+          target === 'live' ? 'Live connection restarted.' : st.connected ? 'Connected to DocuFast.' : 'Still not connected. Check the internet on this PC.');
+  } catch (e) { toast('Could not check: ' + e.message); }
+  btns.forEach(b => { if (b) { b.disabled = false; b.textContent = b.dataset.t || b.textContent; } });
+  reconnecting = false;
+}
 function paintUpdate(u) {
   const box = $('updBanner'); if (!box) return;
   if (!u || u.state === 'idle' || u.state === 'checking') { box.style.display = 'none'; return; }
