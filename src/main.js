@@ -8,6 +8,7 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const url = require('url');
+const { checkPrinter, stuckAfterSend } = require('./printerHealth');
 
 // The packaged app's package.json "name" is "docufast-agent" (the raw npm
 // name), which is what Electron would otherwise use to build the settings
@@ -149,6 +150,7 @@ const stats = {
   paused: false,
   push: 'off',            // off | connecting | connected | down
   pushReason: '',         // why live push is down (from socket probe)
+  printer: { state: 'unknown', label: 'Checking…', detail: '', queued: 0, stuck: 0, checkedAt: null }, // ready | offline | error | unknown
 };
 
 // ---- App lifecycle ----
@@ -172,6 +174,7 @@ async function init() {
   // Customer files are only ever in the temp folder while printing. Anything left from a crash
   // or power cut is removed now, and again every few hours.
   sweepTempFiles(0);
+  setTimeout(monitorPrinter, 3000); setInterval(monitorPrinter, 15000);
   setInterval(() => sweepTempFiles(30 * 60 * 1000), 3 * 60 * 60 * 1000);
 
   // After sleep, the poll/heartbeat setIntervals don't fire while the PC is
@@ -442,6 +445,7 @@ function updateTrayMenu() {
     { label: statusLabel, enabled: false },
     { label: statusSub, enabled: false },
     { type: 'separator' },
+    { label: `Printer: ${stats.printer.state === 'ready' ? '● Ready' : stats.printer.state === 'unknown' ? '○ Unknown' : '⚠ ' + stats.printer.label}`, enabled: false },
     { label: `Jobs today: ${stats.jobsToday}`, enabled: false },
     { label: `Revenue: ₹${(stats.revenueToday / 100).toFixed(2)}`, enabled: false },
     { label: `Pending: ${stats.pending}`, enabled: false },
@@ -905,6 +909,7 @@ async function heartbeat() {
         'x-push-state': String(stats.push || 'off'),
         'x-push-reason': String(stats.pushReason || '').replace(/[^\x20-\x7E]/g, '').slice(0, 200),
         'x-agent-version': app.getVersion(),
+        'x-printer-state': String((stats.printer && stats.printer.state) || 'unknown'),
       },
       body: JSON.stringify(body),
       timeout: 15000,
@@ -1173,27 +1178,31 @@ function notify(title, body) {
 
 // Asks Windows whether the printer can actually print right now. Returns null when it is fine or
 // when Windows cannot tell (never blocks on a guess), otherwise a plain-English problem.
-const PRINTER_ERRORS = { 4: 'out of paper', 6: 'out of toner or ink', 7: 'a door or cover is open', 8: 'a paper jam', 9: 'offline', 11: 'the output tray is full' };
-function printerProblem(printerName) {
-  return new Promise(resolve => {
-    const script = [
-      "$ErrorActionPreference='SilentlyContinue'",
-      "$n=$env:DF_PRINTER",
-      "$p = if ($n) { Get-CimInstance Win32_Printer | Where-Object { $_.Name -eq $n } | Select-Object -First 1 } else { Get-CimInstance Win32_Printer | Where-Object { $_.Default } | Select-Object -First 1 }",
-      "if (-not $p) { '{}' } else { @{ offline = [bool]$p.WorkOffline; status = [int]$p.PrinterStatus; err = [int]$p.DetectedErrorState } | ConvertTo-Json -Compress }",
-    ].join('\n');
-    const encoded = Buffer.from(script, 'utf16le').toString('base64');
-    require('child_process').execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-EncodedCommand', encoded],
-      { windowsHide: true, timeout: 8000, env: { ...process.env, DF_PRINTER: printerName || '' } }, (err, stdout) => {
-        if (err) return resolve(null);
-        try {
-          const r = JSON.parse(String(stdout).trim() || '{}');
-          if (r.offline || r.status === 7) return resolve('offline');
-          if (PRINTER_ERRORS[r.err]) return resolve(PRINTER_ERRORS[r.err]);
-        } catch { /* unreadable: do not block */ }
-        resolve(null);
-      });
-  });
+async function printerProblem(printerName) {
+  const h = await checkPrinter(printerName);
+  setPrinterHealth(h);
+  if (h.state === 'offline' || h.state === 'error') return h.state === 'offline' ? `offline: ${h.detail}` : h.label.toLowerCase();
+  return null;
+}
+
+// Keeps stats.printer fresh, tells the shop once when the printer goes bad and once when it recovers.
+let lastPrinterState = 'unknown';
+function setPrinterHealth(h) {
+  stats.printer = { state: h.state, label: h.label, detail: h.detail, queued: h.queued || 0, stuck: h.stuck || 0, checkedAt: new Date().toISOString() };
+  if (h.state !== lastPrinterState) {
+    const was = lastPrinterState; lastPrinterState = h.state;
+    if ((h.state === 'offline' || h.state === 'error') && stats.account) notify('DocuFast — Printer problem', h.detail);
+    else if (h.state === 'ready' && (was === 'offline' || was === 'error')) notify('DocuFast — Printer is back', 'The printer is ready again.');
+    updateTrayMenu();
+    heartbeat();
+  }
+  broadcastStats();
+}
+let printerMonitorBusy = false;
+async function monitorPrinter() {
+  if (printerMonitorBusy || process.platform !== 'win32') return;
+  printerMonitorBusy = true;
+  try { setPrinterHealth(await checkPrinter(store.get('printerName'))); } catch { /* keep the last state */ } finally { printerMonitorBusy = false; }
 }
 
 // Fetches a job's file ahead of time while the previous one is still printing.
@@ -1259,6 +1268,8 @@ async function handleJob(job, cloudUrl, agentKey) {
     } else {
       await printFile(printablePath, job.copies, job.colorMode, job.duplex, job.exactSize);
     }
+    const stuck = await stuckAfterSend(store.get('printerName'));
+    if (stuck) { monitorPrinter(); throw new Error(`The printer is ${stuck}. It will print automatically once the printer is fixed.`); }
     rememberPrinted(job.code);
     // The job is now with Windows. If the printer reports a fault shortly after, tell the shop.
     setTimeout(async () => {

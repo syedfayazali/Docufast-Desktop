@@ -80,13 +80,24 @@ function applyStats(stats) {
   else if (stats.paused) { pill = 'Printing paused'; cls = 'paused'; }
   else if (stats.connected) { pill = 'Connected'; cls = 'connected'; }
   else { pill = 'Disconnected'; cls = 'disconnected'; }
-  dot.className = 'status-dot ' + cls; lbl.textContent = pill;
+  // Three separate lights: server link, live (instant) link, and the printer itself.
+  const srvText = !plan ? 'Server: not set up' : stats.duplicateKey ? 'Key in use on another PC' : stats.connected ? 'Server connected' : 'Server disconnected';
+  dot.className = 'status-dot ' + (!plan ? 'paused' : (stats.duplicateKey || !stats.connected) ? 'disconnected' : 'connected'); lbl.textContent = srvText;
+  $('connPill').classList.toggle('bad', plan && (stats.duplicateKey || !stats.connected));
+  const lv = { connected: ['Live on', 'connected', ''], connecting: ['Live connecting…', 'paused', ''], down: ['Live down (backup checks)', 'paused', ''], off: ['Live off', 'paused', ''] }[stats.push] || ['Live —', 'paused', ''];
+  $('liveDot').className = 'status-dot ' + lv[1]; $('liveLabel').textContent = lv[0];
+  const pr = stats.printer || { state: 'unknown', label: 'Checking…', detail: '' };
+  const prOk = pr.state === 'ready', prBad = pr.state === 'offline' || pr.state === 'error';
+  $('printerDot').className = 'status-dot ' + (prOk ? 'connected' : prBad ? 'disconnected' : 'paused');
+  $('printerLabel').textContent = !plan ? 'Printer: not set up' : stats.paused ? 'Printing paused' : prOk ? 'Printer ready' : prBad ? 'Printer: ' + pr.label : 'Printer: checking…';
+  $('printerPill').classList.toggle('bad', plan && prBad);
+  $('printerPill').title = (pr.detail || 'Printer status from Windows') + (pr.queued ? ` (${pr.queued} in Windows queue)` : '');
 
   $('kpiJobsToday').textContent = stats.jobsToday;
   $('kpiRevenue').textContent = '₹' + ((stats.revenueToday || 0) / 100).toFixed(2);
   $('kpiPending').textContent = stats.pending;
   if ($('pushState')) $('pushState').textContent = { connected: 'Status: connected', connecting: 'Status: connecting…', down: 'Status: down (using regular checks)', off: 'Status: off' }[stats.push] || '';
-  $('kpiPrinter').textContent = !plan ? 'Not set up' : stats.duplicateKey ? 'Blocked' : stats.paused ? 'Paused' : stats.connected ? 'Online' : 'Offline';
+  $('kpiPrinter').textContent = !plan ? 'Not set up' : stats.duplicateKey ? 'Blocked' : stats.paused ? 'Paused' : prBad ? pr.label : prOk ? 'Ready' : 'Checking…';
 
   if (stats.shopName) { $('brandShop').textContent = stats.shopName; $('shopAv').textContent = stats.shopName.trim().charAt(0).toUpperCase() || 'D'; }
   const city = stats.account && stats.account.shop && stats.account.shop.city;
@@ -111,9 +122,9 @@ function applyStats(stats) {
 
   const pn = savedConfig.printerName;
   $('homePrinter').textContent = !plan ? 'Not chosen yet' : (pn || 'Windows default printer');
-  $('homePrinterSub').textContent = !plan ? 'Start your trial, then pick the printer orders should print on.' : (stats.connected ? 'Ready. Orders print here automatically.' : 'Waiting for a connection…');
-  const chip = $('homePrinterChip'); chip.textContent = !plan ? 'Not set up' : stats.paused ? 'Paused' : stats.connected ? 'Online' : 'Offline';
-  chip.className = 'chip ' + (!plan ? '' : stats.paused ? 'warn' : stats.connected ? 'ok' : 'err');
+  $('homePrinterSub').textContent = !plan ? 'Start your trial, then pick the printer orders should print on.' : (prBad ? pr.detail : (stats.connected ? 'Ready. Orders print here automatically.' : 'Waiting for a connection…'));
+  const chip = $('homePrinterChip'); chip.textContent = !plan ? 'Not set up' : stats.paused ? 'Paused' : prBad ? pr.label : !stats.connected ? 'Offline' : prOk ? 'Ready' : 'Checking…';
+  chip.className = 'chip ' + (!plan ? '' : stats.paused ? 'warn' : (prBad || !stats.connected) ? 'err' : prOk ? 'ok' : 'warn');
 
   paintHero();
   renderDashJobs(stats.recentJobs || []);

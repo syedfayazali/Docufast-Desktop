@@ -53,6 +53,10 @@ button,input,select { font:inherit; color:inherit; }
 .status-dot.connected { background:#2BB673; box-shadow:0 0 0 4px rgba(43,182,115,.2); }
 .status-dot.disconnected { background:#E5534B; }
 .status-dot.paused { background:var(--gold); }
+.tools { flex-wrap:wrap; }
+.conn { padding:6px 11px; gap:6px; }
+.conn .ic.sm { width:15px; height:15px; stroke:var(--muted,#64708a); }
+.conn.bad { background:var(--err-bg); color:var(--err); } .conn.bad .ic.sm { stroke:var(--err); }
 .scroll { flex:1; min-height:0; overflow-y:auto; padding:26px 32px 40px; }
 .tab { display:none; max-width:1640px; margin:0 auto; }
 .tab.active { display:block; }
