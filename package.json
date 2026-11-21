@@ -1,6 +1,6 @@
 {
   "name": "docufast-agent",
-  "version": "2.1.9",
+  "version": "2.1.10",
   "description": "DocuFast India \u2014 print shop app for Windows",
   "main": "src/main.js",
   "scripts": {
@@ -38,7 +38,8 @@
       "uninstallerSidebar": "build/uninstallerSidebar.bmp",
       "installerHeader": "build/installerHeader.bmp",
       "deleteAppDataOnUninstall": false,
-      "artifactName": "DocuFast-Setup.exe"
+      "artifactName": "DocuFast-Setup.exe",
+      "include": "build/installer.nsh"
     },
     "extraResources": [
       {
