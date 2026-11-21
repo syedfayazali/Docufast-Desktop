@@ -150,6 +150,7 @@ const stats = {
   paused: false,
   push: 'off',            // off | connecting | connected | down
   pushReason: '',         // why live push is down (from socket probe)
+  update: { state: 'idle', version: null, percent: 0, transferred: 0, total: 0, speed: 0, error: '' }, // idle|checking|downloading|ready|installing|error
   printer: { state: 'unknown', label: 'Checking…', detail: '', queued: 0, stuck: 0, checkedAt: null }, // ready | offline | error | unknown
 };
 
@@ -230,17 +231,27 @@ function setupAutoUpdate() {
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = true;
 
+  const setUpd = (patch) => { stats.update = { ...stats.update, ...patch }; broadcastStats(); };
+  autoUpdater.on('checking-for-update', () => { if (stats.update.state !== 'downloading' && stats.update.state !== 'ready') setUpd({ state: 'checking', error: '' }); });
+  autoUpdater.on('update-available', (info) => { logPrint(`UPDATE v${info.version} found, downloading`); setUpd({ state: 'downloading', version: info.version, percent: 0, transferred: 0, total: 0, speed: 0, error: '' }); });
+  autoUpdater.on('update-not-available', () => { if (stats.update.state !== 'ready') setUpd({ state: 'idle', error: '' }); });
+  autoUpdater.on('download-progress', (p) => setUpd({ state: 'downloading', percent: Math.round(p.percent || 0), transferred: p.transferred || 0, total: p.total || 0, speed: p.bytesPerSecond || 0 }));
+
   autoUpdater.on('update-downloaded', (info) => {
     updateReady = true;
     updateVersion = info.version;
+    logPrint(`UPDATE v${info.version} downloaded`);
+    setUpd({ state: 'ready', version: info.version, percent: 100 });
     updateTrayMenu();
     installUpdateWhenIdle(info.version);
   });
 
   autoUpdater.on('error', (err) => {
-    // Non-fatal by design — a broken update check should never interrupt
-    // the actual print-agent loop. Logged for remote debugging only.
-    console.error('Auto-update check failed:', err.message);
+    // Never interrupts printing, but is now shown in the app and written to the print log so a
+    // failing update can be diagnosed instead of silently doing nothing.
+    console.error('Auto-update failed:', err.message);
+    logPrint(`UPDATE ERROR: ${String(err.message).split('\n')[0].slice(0, 300)}`);
+    setUpd({ state: 'error', error: String(err.message).split('\n')[0].slice(0, 200) });
   });
 
   setTimeout(() => autoUpdater.checkForUpdates().catch(() => {}), 20 * 1000); // shortly after start
@@ -263,6 +274,7 @@ function installUpdateWhenIdle(version) {
   const tryNow = () => {
     if (isPolling) return setTimeout(tryNow, 10 * 1000); // a print is in progress: wait
     store.set('lastAutoInstall', { version, at: Date.now() });
+    stats.update = { ...stats.update, state: 'installing' }; broadcastStats();
     new Notification({ title: 'DocuFast is updating', body: `Installing version ${version}. DocuFast will reopen in a few seconds.`, icon: assetPath('icon.ico') }).show();
     setTimeout(() => {
       try { autoUpdater.quitAndInstall(true, true); } // silent install, then reopen
@@ -633,12 +645,18 @@ ipcMain.handle('get-log-tail', (_, lines = 40) => {
     return t.slice(-Math.max(5, Math.min(200, lines))).join('\n');
   } catch { return '(no print log yet)'; }
 });
+ipcMain.handle('install-update', () => {
+  if (!updateReady) return { ok: false, message: 'No downloaded update to install yet.' };
+  stats.update = { ...stats.update, state: 'installing' }; broadcastStats();
+  setTimeout(() => { try { autoUpdater.quitAndInstall(true, true); } catch (e) { logPrint(`UPDATE ERROR installing: ${e.message}`); stats.update = { ...stats.update, state: 'error', error: e.message }; broadcastStats(); } }, 500);
+  return { ok: true };
+});
 ipcMain.handle('check-updates', async () => {
   if (!app.isPackaged) return { ok: false, message: 'Updates only work in the installed app.' };
   try {
     const r = await autoUpdater.checkForUpdates();
     const v = r?.updateInfo?.version;
-    if (v && v !== app.getVersion()) return { ok: true, message: `Version ${v} found — downloading in the background.` };
+    if (v && v !== app.getVersion()) return { ok: true, message: `Version ${v} found. Watch the progress bar at the top.` };
     return { ok: true, message: `You're up to date (v${app.getVersion()}).` };
   } catch (e) { return { ok: false, message: `Could not check: ${e.message}` }; }
 });

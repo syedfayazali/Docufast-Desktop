@@ -19,6 +19,7 @@ contextBridge.exposeInMainWorld('docufast', {
   openLogFolder: () => ipcRenderer.invoke('open-log-folder'),
   getLogTail: (n) => ipcRenderer.invoke('get-log-tail', n),
   checkUpdates: () => ipcRenderer.invoke('check-updates'),
+  installUpdate: () => ipcRenderer.invoke('install-update'),
   setPaused: (p) => ipcRenderer.invoke('set-paused', p),
   testPrint: () => ipcRenderer.invoke('test-print'),
 

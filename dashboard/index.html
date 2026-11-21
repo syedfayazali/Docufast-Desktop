@@ -83,6 +83,15 @@
           <div class="hero-actions" id="heroActions"></div>
         </div>
 
+        <div class="banner upd" id="updBanner" style="display:none;">
+          <div style="flex:1;min-width:0;">
+            <div id="updTitle" style="font-weight:600;"></div>
+            <div class="upd-bar" id="updBarWrap"><i id="updBar"></i></div>
+            <div id="updSub" style="font-size:12px;opacity:.85;margin-top:3px;"></div>
+          </div>
+          <button class="btn gold" id="updInstall" type="button" onclick="installUpdateNow()" style="display:none;">Install now</button>
+          <button class="btn" id="updRetry" type="button" onclick="checkUpdates()" style="display:none;">Try again</button>
+        </div>
         <div class="banner warn" id="pausedBanner" style="display:none;">
           <span><strong>Printing is paused.</strong> New paid orders will wait until you resume.</span>
           <button class="btn sm" onclick="togglePause()">Resume</button>

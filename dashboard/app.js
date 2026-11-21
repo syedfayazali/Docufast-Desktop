@@ -126,6 +126,7 @@ function applyStats(stats) {
   const chip = $('homePrinterChip'); chip.textContent = !plan ? 'Not set up' : stats.paused ? 'Paused' : prBad ? pr.label : !stats.connected ? 'Offline' : prOk ? 'Ready' : 'Checking…';
   chip.className = 'chip ' + (!plan ? '' : stats.paused ? 'warn' : (prBad || !stats.connected) ? 'err' : prOk ? 'ok' : 'warn');
 
+  paintUpdate(stats.update);
   paintHero();
   renderDashJobs(stats.recentJobs || []);
   if (currentTab === 'jobs') renderJobsTab();
@@ -375,6 +376,34 @@ async function copyLog() {
   const t = await window.docufast.getLogTail(80);
   try { await navigator.clipboard.writeText(t); $('updMsg').textContent = 'Log copied ✓'; }
   catch { await loadLog(); $('updMsg').textContent = 'Select the log text and copy it manually.'; }
+}
+const fmtMB = (b) => (b / 1048576).toFixed(1) + ' MB';
+function paintUpdate(u) {
+  const box = $('updBanner'); if (!box) return;
+  if (!u || u.state === 'idle' || u.state === 'checking') { box.style.display = 'none'; return; }
+  box.style.display = 'flex'; box.classList.toggle('bad', u.state === 'error');
+  const v = u.version ? ' v' + u.version : '';
+  $('updBarWrap').style.display = (u.state === 'downloading' || u.state === 'ready' || u.state === 'installing') ? 'block' : 'none';
+  $('updBar').style.width = (u.state === 'downloading' ? (u.percent || 0) : 100) + '%';
+  $('updInstall').style.display = u.state === 'ready' ? '' : 'none';
+  $('updRetry').style.display = u.state === 'error' ? '' : 'none';
+  if (u.state === 'downloading') {
+    $('updTitle').textContent = `Downloading update${v}: ${u.percent || 0}%`;
+    $('updSub').textContent = u.total ? `${fmtMB(u.transferred)} of ${fmtMB(u.total)}` + (u.speed ? ` · ${fmtMB(u.speed)}/s` : '') : 'Starting download…';
+  } else if (u.state === 'ready') {
+    $('updTitle').textContent = `Update${v} is downloaded and ready`;
+    $('updSub').textContent = 'It installs by itself when no print is running. Or press Install now.';
+  } else if (u.state === 'installing') {
+    $('updTitle').textContent = `Installing update${v}…`;
+    $('updSub').textContent = 'DocuFast will close and reopen in a few seconds.';
+  } else {
+    $('updTitle').textContent = 'Update failed';
+    $('updSub').textContent = (u.error || 'Unknown error') + ' (also saved in the print log)';
+  }
+}
+async function installUpdateNow() {
+  const r = await window.docufast.installUpdate();
+  if (!r.ok) toast(r.message);
 }
 async function checkUpdates() {
   $('updMsg').textContent = 'Checking…';

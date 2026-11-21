@@ -124,6 +124,10 @@ input[readonly] { background:#F7F9FC; }
 /* ---------- Banners ---------- */
 .banner { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 16px; border-radius:12px; margin-bottom:14px; font-size:13px; }
 .banner.warn { background:var(--warn-bg); color:var(--warn); }
+.banner.upd { background:var(--navy-tint); color:var(--navy); }
+.banner.upd.bad { background:var(--err-bg); color:var(--err); }
+.upd-bar { height:8px; border-radius:6px; background:rgba(0,0,0,.1); margin-top:8px; overflow:hidden; }
+.upd-bar i { display:block; height:100%; width:0; background:#2BB673; border-radius:6px; transition:width .3s; }
 .banner.err { background:var(--err-bg); color:var(--err); }
 .planbar { display:flex; align-items:center; gap:12px; justify-content:space-between; padding:12px 18px; margin:0 auto 18px; max-width:1640px; border-radius:12px; font-weight:500; }
 .planbar.warn { background:var(--warn-bg); color:var(--warn); }
